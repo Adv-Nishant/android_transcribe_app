@@ -397,7 +397,12 @@ public class RustInputMethodService extends InputMethodService {
         // (long-lived) IME process stayed alive, so it matches the app setting.
         if (inputView != null
                 && ThemePrefs.isNight(ThemePrefs.wrapForNight(this, ThemePrefs.getMode(this))) != viewIsNight) {
-            setInputView(onCreateInputView());
+            View rebuilt = onCreateInputView();
+            setInputView(rebuilt);
+            // The window already dispatched its insets to the old view; ask
+            // for a new pass so the replacement gets its navigation-bar
+            // padding (otherwise the bottom key row is cut off).
+            rebuilt.requestApplyInsets();
         }
         // A field is focused and the input connection is live again — commit any
         // text that finished transcribing while nothing was focused.
