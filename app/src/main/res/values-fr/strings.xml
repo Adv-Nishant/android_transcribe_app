@@ -54,7 +54,7 @@
     <string name="model_desc_parakeet_v3_q8">Comme le modèle intégré, précision supérieure</string>
     <string name="model_desc_whisper_turbo">99 langues, le plus précis de cette liste ; ne traduit pas</string>
     <string name="model_desc_browse">Parcourir tous les modèles transcribe.cpp</string>
-    <string name="models_desc">Le modèle intégré fonctionne immédiatement. Vous pouvez aussi importer n\'importe quel modèle GGUF transcribe.cpp téléchargé. L\'application reste entièrement hors ligne ; les téléchargements passent par votre navigateur. Le clavier vocal prend en compte un changement de modèle après son redémarrage.</string>
+    <string name="models_desc">Le modèle intégré fonctionne immédiatement. Vous pouvez aussi importer n\'importe quel modèle GGUF transcribe.cpp téléchargé. L\'application reste entièrement hors ligne ; les téléchargements passent par votre navigateur.</string>
     <string name="models_loading">Chargement du modèle…</string>
     <string name="models_import">Importer un fichier de modèle (.gguf)</string>
     <string name="models_importing">Importation de %1$s…</string>

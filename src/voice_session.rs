@@ -166,6 +166,16 @@ pub fn start_recording(mut env: JNIEnv, state: &mut VoiceSessionState, auto_stop
             state.stream = Some(SendStream(s));
             notify_status(&mut env, state.target_ref.as_obj(), "Listening...");
 
+            // Settings changed in the app since this process loaded the
+            // model: reload while the user speaks rather than after.
+            if engine::is_engine_loaded() && !engine::is_current() {
+                let jvm = state.jvm.clone();
+                let target_ref = state.target_ref.clone();
+                std::thread::spawn(move || {
+                    let _ = engine::ensure_loaded_from_thread(&jvm, &target_ref);
+                });
+            }
+
             if let Some(ep) = endpoint {
                 let jvm = state.jvm.clone();
                 let target_ref = state.target_ref.clone();
@@ -240,8 +250,9 @@ pub fn stop_recording(mut env: JNIEnv, state: &mut VoiceSessionState) {
         };
         let obj = target_ref.as_obj();
 
-        // Wait for engine if somehow still loading
-        if engine::get_engine().is_none() {
+        // Wait for the engine if it is still loading, or reload it if the
+        // model settings changed since it was loaded.
+        if !engine::is_current() {
             if let Err(_) = engine::ensure_loaded(&mut env, obj) {
                 return;
             }

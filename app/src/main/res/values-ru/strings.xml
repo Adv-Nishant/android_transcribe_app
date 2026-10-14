@@ -54,7 +54,7 @@
     <string name="model_desc_parakeet_v3_q8">Как встроенная модель, но точнее</string>
     <string name="model_desc_whisper_turbo">99 языков, самая точная в этом списке; не переводит</string>
     <string name="model_desc_browse">Все модели transcribe.cpp</string>
-    <string name="models_desc">Встроенная модель работает сразу. Вы также можете импортировать любую скачанную модель GGUF для transcribe.cpp. Приложение остаётся полностью офлайн; загрузки выполняются в браузере. Голосовая клавиатура применяет смену модели после перезапуска.</string>
+    <string name="models_desc">Встроенная модель работает сразу. Вы также можете импортировать любую скачанную модель GGUF для transcribe.cpp. Приложение остаётся полностью офлайн; загрузки выполняются в браузере.</string>
     <string name="models_loading">Загрузка модели…</string>
     <string name="models_import">Импортировать файл модели (.gguf)</string>
     <string name="models_importing">Импорт %1$s…</string>

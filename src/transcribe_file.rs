@@ -128,7 +128,7 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_TranscribeFileActivity_
         let obj = target_ref.as_obj();
 
         // Ensure engine is loaded (waits if another thread is loading)
-        if engine::get_engine().is_none() {
+        if !engine::is_current() {
             if let Err(_) = engine::ensure_loaded(&mut env, obj) {
                 return;
             }

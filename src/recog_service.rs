@@ -344,7 +344,7 @@ fn finalize(shared: Arc<Endpoint>, stream: Arc<Mutex<Option<SendStream>>>) {
         return;
     }
 
-    if engine::get_engine().is_none() {
+    if !engine::is_current() {
         if engine::ensure_loaded(&mut env, target).is_err() {
             call_error(&mut env, target, ERROR_SERVER);
             clear_session(&shared);

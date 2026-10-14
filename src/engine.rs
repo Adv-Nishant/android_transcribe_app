@@ -8,8 +8,9 @@
 //! imported one fails to load.
 
 use once_cell::sync::Lazy;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
+use std::time::SystemTime;
 
 use jni::objects::{GlobalRef, JObject};
 use jni::JNIEnv;
@@ -193,6 +194,76 @@ impl Engine {
 static GLOBAL_ENGINE: Lazy<Mutex<Option<Arc<Mutex<Engine>>>>> =
     Lazy::new(|| Mutex::new(None));
 
+/// The settings the loaded engine was built from, and where they live.
+/// Settings are changed in the app process, but the keyboard runs in its own
+/// `:ime` process with its own engine; comparing against the files on disk
+/// lets every process notice a change and reload, instead of the keyboard
+/// keeping the old model or language until its process dies.
+static LOADED_CONFIG: Lazy<Mutex<Option<(PathBuf, EngineConfig)>>> =
+    Lazy::new(|| Mutex::new(None));
+
+#[derive(Debug, Clone, PartialEq)]
+struct EngineConfig {
+    active_model: Option<String>,
+    /// Size and mtime of the imported model file, so re-importing a file
+    /// under the same name also reloads.
+    model_stamp: Option<(u64, Option<SystemTime>)>,
+    language: Option<String>,
+    translate: bool,
+    threads: Option<i32>,
+}
+
+impl EngineConfig {
+    fn read(files_dir: &Path) -> EngineConfig {
+        let active_model = read_config(&files_dir.join(ACTIVE_MODEL_FILE));
+        let model_stamp = active_model.as_ref().and_then(|name| {
+            let meta = std::fs::metadata(files_dir.join("models").join(name)).ok()?;
+            Some((meta.len(), meta.modified().ok()))
+        });
+        EngineConfig {
+            active_model,
+            model_stamp,
+            // Absent/empty or "auto" = no hint (the model's automatic mode).
+            // A tag the model doesn't know is degraded per run (Engine::run).
+            language: read_config(&files_dir.join(MODEL_LANGUAGE_FILE))
+                .filter(|l| !l.eq_ignore_ascii_case("auto")),
+            translate: files_dir.join(MODEL_TRANSLATE_FILE).exists(),
+            threads: read_config(&files_dir.join(MODEL_THREADS_FILE))
+                .and_then(|s| s.parse::<i32>().ok())
+                .filter(|&n| n > 0),
+        }
+    }
+}
+
+/// True if the model settings changed since the engine was loaded.
+fn config_is_stale() -> bool {
+    match &*LOADED_CONFIG.lock().unwrap() {
+        Some((dir, loaded)) => EngineConfig::read(dir) != *loaded,
+        None => false,
+    }
+}
+
+/// Drops the engine if its settings are outdated, so the next load picks up
+/// the current ones. Re-checked under the load lock, so concurrent callers
+/// don't throw away a load that already uses the new settings.
+fn reset_if_stale() {
+    let (lock, cvar) = &*LOAD_STATE;
+    let mut state = lock.lock().unwrap();
+    while *state == LoadState::Loading {
+        state = cvar.wait(state).unwrap();
+    }
+    if config_is_stale() {
+        log::info!("model settings changed; reloading the engine");
+        *GLOBAL_ENGINE.lock().unwrap() = None;
+        *state = LoadState::Idle;
+    }
+}
+
+/// True if the engine is loaded and matches the current settings.
+pub fn is_current() -> bool {
+    is_engine_loaded() && !config_is_stale()
+}
+
 /// Loading coordination state + condvar for waiters.
 static LOAD_STATE: Lazy<(Mutex<LoadState>, Condvar)> =
     Lazy::new(|| (Mutex::new(LoadState::Idle), Condvar::new()));
@@ -295,6 +366,10 @@ pub fn ensure_loaded_from_thread(
             notify_status(&mut env, target_ref.as_obj(), msg);
         }
     };
+
+    if config_is_stale() {
+        reset_if_stale();
+    }
 
     // Fast path: already loaded
     if is_engine_loaded() {
@@ -448,23 +523,19 @@ fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
         notify_status(env, context, &format!("Error: {}", msg));
         msg
     })?;
-    // Absent/empty or "auto" = no hint (the model's automatic mode). A tag
-    // the model doesn't know is degraded per run — see Engine::run.
-    let language = read_config(&files_dir.join(MODEL_LANGUAGE_FILE))
-        .filter(|l| !l.eq_ignore_ascii_case("auto"));
-    let translate = files_dir.join(MODEL_TRANSLATE_FILE).exists();
-    let threads = read_config(&files_dir.join(MODEL_THREADS_FILE))
-        .and_then(|s| s.parse::<i32>().ok())
-        .filter(|&n| n > 0)
-        .unwrap_or_else(performance_core_count);
+    let config = EngineConfig::read(&files_dir);
+    let language = config.language.clone();
+    let translate = config.translate;
+    let threads = config.threads.unwrap_or_else(performance_core_count);
 
-    if let Some(name) = read_config(&files_dir.join(ACTIVE_MODEL_FILE)) {
+    if let Some(name) = config.active_model.clone() {
         let path = files_dir.join("models").join(&name);
         notify_status(env, context, &format!("Loading model {}...", name));
         match Engine::load(&path, language.clone(), translate, threads) {
             Ok(engine) => {
                 let status = engine.ready_status;
                 *GLOBAL_ENGINE.lock().unwrap() = Some(Arc::new(Mutex::new(engine)));
+                *LOADED_CONFIG.lock().unwrap() = Some((files_dir, config));
                 notify_status(env, context, status);
                 return Ok(());
             }
@@ -494,6 +565,7 @@ fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
         Ok(engine) => {
             let status = engine.ready_status;
             *GLOBAL_ENGINE.lock().unwrap() = Some(Arc::new(Mutex::new(engine)));
+            *LOADED_CONFIG.lock().unwrap() = Some((files_dir, config));
             notify_status(env, context, status);
             Ok(())
         }
