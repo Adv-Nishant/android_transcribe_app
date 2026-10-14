@@ -33,8 +33,27 @@ pub fn files_dir(env: &mut JNIEnv, context: &JObject) -> anyhow::Result<PathBuf>
 
 /// Extracts the bundled model from APK assets (if not already done) and
 /// returns the path of its GGUF file.
+///
+/// The app process and the keyboard's `:ime` process both call this, often
+/// at the same time on first start, and share filesDir. Extraction is
+/// therefore serialized with a file lock and written to a temporary
+/// directory that is renamed into place only once complete, so no process
+/// ever sees, deletes or loads another one's half-written model.
 pub fn extract_builtin_model(env: &mut JNIEnv, context: &JObject) -> anyhow::Result<PathBuf> {
     let base_path = files_dir(env, context)?;
+    let model_dir = base_path.join(BUILTIN_MODEL_DIR);
+    let marker_file = model_dir.join(EXTRACTION_COMPLETE_MARKER);
+
+    // The marker only ever appears together with a complete directory.
+    if marker_file.exists() {
+        return find_gguf(&model_dir);
+    }
+
+    let _lock = ExtractionLock::acquire(&base_path.join(EXTRACTION_LOCK))?;
+    // Another process may have finished extracting while we waited.
+    if marker_file.exists() {
+        return find_gguf(&model_dir);
+    }
 
     let legacy_dir = base_path.join(LEGACY_MODEL_DIR);
     if legacy_dir.exists() {
@@ -42,21 +61,11 @@ pub fn extract_builtin_model(env: &mut JNIEnv, context: &JObject) -> anyhow::Res
         let _ = std::fs::remove_dir_all(&legacy_dir);
     }
 
-    let model_dir = base_path.join(BUILTIN_MODEL_DIR);
-    let marker_file = model_dir.join(EXTRACTION_COMPLETE_MARKER);
-
-    // Only skip extraction if the marker file exists (proves prior extraction completed)
-    if marker_file.exists() {
-        return find_gguf(&model_dir);
+    let tmp_root = base_path.join(EXTRACTION_TMP_DIR);
+    if tmp_root.exists() {
+        std::fs::remove_dir_all(&tmp_root)?;
     }
-
-    // Incomplete or missing — wipe and re-extract
-    if model_dir.exists() {
-        log::info!("Removing incomplete model directory for re-extraction");
-        let _ = std::fs::remove_dir_all(&model_dir);
-    }
-
-    std::fs::create_dir_all(&model_dir)?;
+    std::fs::create_dir_all(&tmp_root)?;
 
     let asset_manager_obj = env
         .call_method(
@@ -66,14 +75,58 @@ pub fn extract_builtin_model(env: &mut JNIEnv, context: &JObject) -> anyhow::Res
             &[],
         )?
         .l()?;
+    copy_assets_recursively(env, &asset_manager_obj, BUILTIN_MODEL_DIR, &tmp_root)?;
 
-    copy_assets_recursively(env, &asset_manager_obj, BUILTIN_MODEL_DIR, &base_path)?;
+    // Only mark (and publish) the extraction if the model actually arrived.
+    let tmp_model_dir = tmp_root.join(BUILTIN_MODEL_DIR);
+    find_gguf(&tmp_model_dir)?;
+    std::fs::write(tmp_model_dir.join(EXTRACTION_COMPLETE_MARKER), "ok")?;
 
-    // Write the marker file to indicate successful completion
-    std::fs::write(&marker_file, "ok")?;
-    log::info!("Asset extraction complete, marker written");
+    if model_dir.exists() {
+        log::info!("Replacing incomplete model directory");
+        std::fs::remove_dir_all(&model_dir)?;
+    }
+    std::fs::rename(&tmp_model_dir, &model_dir)?;
+    let _ = std::fs::remove_dir_all(&tmp_root);
+    log::info!("Asset extraction complete");
 
     find_gguf(&model_dir)
+}
+
+/// Lock file in filesDir serializing extraction across processes.
+const EXTRACTION_LOCK: &str = ".builtin-model.lock";
+/// Scratch directory in filesDir that extraction writes into.
+const EXTRACTION_TMP_DIR: &str = ".builtin-model.tmp";
+
+/// An exclusive `flock` on a file, released when dropped (or when the
+/// process dies, so a killed extraction never leaves a stale lock).
+struct ExtractionLock(std::fs::File);
+
+impl ExtractionLock {
+    fn acquire(path: &Path) -> anyhow::Result<ExtractionLock> {
+        use std::os::unix::io::AsRawFd;
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(false)
+            .open(path)?;
+        loop {
+            if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX) } == 0 {
+                return Ok(ExtractionLock(file));
+            }
+            let err = std::io::Error::last_os_error();
+            if err.kind() != std::io::ErrorKind::Interrupted {
+                return Err(err.into());
+            }
+        }
+    }
+}
+
+impl Drop for ExtractionLock {
+    fn drop(&mut self) {
+        use std::os::unix::io::AsRawFd;
+        unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
+    }
 }
 
 /// Removes the extraction marker so the next load re-extracts the bundled
@@ -156,39 +209,46 @@ fn copy_asset_file(
         &[(&path_jstring).into()],
     );
 
-    match result {
-        Ok(stream_val) => {
-            let stream_obj = stream_val.l()?;
-            let target_file_path = target_root.join(asset_path);
-
-            let mut file = std::fs::File::create(&target_file_path)?;
-            let mut buffer = [0u8; 8192];
-            let buffer_j = env.new_byte_array(8192)?;
-
-            loop {
-                let bytes_read = env
-                    .call_method(&stream_obj, "read", "([B)I", &[(&buffer_j).into()])?
-                    .i()?;
-
-                if bytes_read == -1 {
-                    break;
-                }
-
-                let bytes_read_usize = bytes_read as usize;
-                let buffer_slice = unsafe {
-                    std::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut i8, bytes_read_usize)
-                };
-
-                env.get_byte_array_region(&buffer_j, 0, buffer_slice)?;
-
-                use std::io::Write;
-                file.write_all(&buffer[0..bytes_read_usize])?;
-            }
-
-            env.call_method(&stream_obj, "close", "()V", &[])?;
-            log::info!("Extracted: {:?}", target_file_path);
-            Ok(())
+    let stream_obj = match result {
+        Ok(stream_val) => stream_val.l()?,
+        Err(e) => {
+            // A failed Java call leaves an exception pending, which would
+            // abort the process on the next JNI call.
+            let _ = env.exception_clear();
+            anyhow::bail!("cannot open asset {}: {}", asset_path, e);
         }
-        Err(_) => Ok(()),
+    };
+    let target_file_path = target_root.join(asset_path);
+    let copied = copy_stream(env, &stream_obj, &target_file_path);
+    let _ = env.call_method(&stream_obj, "close", "()V", &[]);
+    if copied.is_err() {
+        let _ = env.exception_clear();
     }
+    copied?;
+    log::info!("Extracted: {:?}", target_file_path);
+    Ok(())
+}
+
+/// Copies a Java InputStream to a file, flushed to disk before returning.
+fn copy_stream(env: &mut JNIEnv, stream: &JObject, target: &Path) -> anyhow::Result<()> {
+    use std::io::Write;
+    // Large chunks: every read is a JNI round trip, and the model is ~500 MB.
+    const CHUNK: usize = 1 << 20;
+    let mut file = std::fs::File::create(target)?;
+    let mut buffer = vec![0u8; CHUNK];
+    let buffer_j = env.new_byte_array(CHUNK as i32)?;
+    loop {
+        let bytes_read = env
+            .call_method(stream, "read", "([B)I", &[(&buffer_j).into()])?
+            .i()?;
+        if bytes_read < 0 {
+            break;
+        }
+        let n = bytes_read as usize;
+        let slice = unsafe { std::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut i8, n) };
+        env.get_byte_array_region(&buffer_j, 0, slice)?;
+        file.write_all(&buffer[..n])?;
+    }
+    file.sync_all()?;
+    Ok(())
 }
