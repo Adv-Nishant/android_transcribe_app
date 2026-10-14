@@ -17,19 +17,15 @@ use jni::objects::{GlobalRef, JClass, JObject};
 use jni::JNIEnv;
 use once_cell::sync::Lazy;
 
+use crate::endpoint::Endpointer;
 use crate::engine;
 use crate::voice_session::SendStream;
 
-// --- Endpointing / VAD tuning -------------------------------------------------
-// These are deliberately simple heuristics on the smoothed mic level. Mic gain
-// varies a lot between devices, so they may need tuning; finalisation always
-// transcribes whatever was captured, so a mis-tuned threshold only affects the
-// auto-stop *timing*, never whether text is returned.
+// --- Endpointing tuning ------------------------------------------------------
+// Speech detection itself lives in `endpoint`. Finalisation always transcribes
+// whatever was captured, so endpointing only affects the auto-stop *timing*,
+// never whether text is returned.
 //
-/// Absolute smoothed level (0..1) that must be exceeded to count as speech.
-const MIN_SPEECH_LEVEL: f32 = 0.12;
-/// How far above the running noise floor a level must be to count as speech.
-const SPEECH_MARGIN: f32 = 0.08;
 /// Trailing silence after speech that triggers auto-finalisation.
 const SILENCE_MS: u64 = 1500;
 /// If no speech is ever detected, finalise after this long anyway.
@@ -49,10 +45,8 @@ const ERROR_NO_MATCH: i32 = 7;
 /// (the stream's callback holds an `Arc<Endpoint>`).
 struct Endpoint {
     audio_buffer: Mutex<Vec<f32>>,
-    last_voice: Mutex<Instant>,
-    noise_floor: Mutex<f32>,
+    endpointer: Mutex<Endpointer>,
     last_level_sent: Mutex<Instant>,
-    speech_started: AtomicBool,
     finalized: AtomicBool,
     cancelled: AtomicBool,
     started_at: Instant,
@@ -152,10 +146,8 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_VoiceRecognitionService
     let now = Instant::now();
     let shared = Arc::new(Endpoint {
         audio_buffer: Mutex::new(Vec::new()),
-        last_voice: Mutex::new(now),
-        noise_floor: Mutex::new(0.0),
+        endpointer: Mutex::new(Endpointer::new()),
         last_level_sent: Mutex::new(now),
-        speech_started: AtomicBool::new(false),
         finalized: AtomicBool::new(false),
         cancelled: AtomicBool::new(false),
         started_at: now,
@@ -275,25 +267,11 @@ fn audio_callback(shared: &Arc<Endpoint>, data: &[f32]) {
     let rms = (sum / (data.len().max(1) as f32)).sqrt();
     let level = (rms * 6.0).clamp(0.0, 1.0);
 
-    let floor = *shared.noise_floor.lock().unwrap();
-    let is_speech = level > MIN_SPEECH_LEVEL && level > floor + SPEECH_MARGIN;
-
-    if is_speech {
-        *shared.last_voice.lock().unwrap() = Instant::now();
-        // First detected speech -> notify beginningOfSpeech exactly once.
-        if shared
-            .speech_started
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_ok()
-        {
-            if let Ok(mut env) = shared.jvm.attach_current_thread() {
-                call_void(&mut env, shared.target.as_obj(), "onBeginningOfSpeech");
-            }
+    // First detected speech -> notify beginningOfSpeech exactly once.
+    if shared.endpointer.lock().unwrap().push(data) {
+        if let Ok(mut env) = shared.jvm.attach_current_thread() {
+            call_void(&mut env, shared.target.as_obj(), "onBeginningOfSpeech");
         }
-    } else {
-        // Slowly adapt the noise floor while no speech is present.
-        let mut nf = shared.noise_floor.lock().unwrap();
-        *nf = *nf * 0.95 + level * 0.05;
     }
 
     // Throttled mic-level updates for the keyboard's waveform UI.
@@ -316,10 +294,12 @@ fn endpoint_monitor(shared: Arc<Endpoint>, stream: Arc<Mutex<Option<SendStream>>
         }
 
         let elapsed = shared.started_at.elapsed();
-        let speech = shared.speech_started.load(Ordering::SeqCst);
-        let silence = shared.last_voice.lock().unwrap().elapsed();
+        let (speech, silence_ms) = {
+            let ep = shared.endpointer.lock().unwrap();
+            (ep.speech_started(), ep.silence_ms())
+        };
 
-        let done = (speech && silence >= Duration::from_millis(SILENCE_MS))
+        let done = (speech && silence_ms >= SILENCE_MS)
             || elapsed >= Duration::from_millis(MAX_SESSION_MS)
             || (!speech && elapsed >= Duration::from_millis(NO_SPEECH_TIMEOUT_MS));
 
@@ -345,7 +325,7 @@ fn finalize(shared: Arc<Endpoint>, stream: Arc<Mutex<Option<SendStream>>>) {
     *stream.lock().unwrap() = None;
 
     let buffer = shared.audio_buffer.lock().unwrap().clone();
-    let speech = shared.speech_started.load(Ordering::SeqCst);
+    let speech = shared.endpointer.lock().unwrap().speech_started();
 
     let mut env = match shared.jvm.attach_current_thread() {
         Ok(e) => e,
