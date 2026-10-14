@@ -5,6 +5,11 @@ plugins {
     id("com.android.application")
 }
 
+// ABIs to build native code for. Releases ship arm64 only; pass e.g.
+// -PtargetAbis=x86_64 (comma-separated) to run on an x86_64 emulator.
+val targetAbis = (project.findProperty("targetAbis") as String? ?: "arm64-v8a")
+    .split(",").map { it.trim() }.filter { it.isNotEmpty() }
+
 android {
     namespace = "dev.notune.transcribe"
     compileSdk = 35
@@ -16,7 +21,7 @@ android {
         versionCode = 19
         versionName = "0.1.18"
         ndk {
-            abiFilters += "arm64-v8a"
+            abiFilters += targetAbis
         }
     }
 
@@ -126,23 +131,25 @@ val cargoNdkBuild by tasks.registering(Exec::class) {
     val jniLibsDir = project.file("src/main/jniLibs")
 
     commandLine(
-        "cargo", "ndk",
-        "-t", "arm64-v8a",
-        "-o", jniLibsDir.absolutePath,
-        "build", "--release"
+        listOf("cargo", "ndk") +
+            targetAbis.flatMap { listOf("-t", it) } +
+            listOf("-o", jniLibsDir.absolutePath, "build", "--release")
     )
 
     // Copy libc++_shared.so from NDK (needed because Rust links against it dynamically)
     doLast {
         val ndkPath = environment["ANDROID_NDK_HOME"] as String
-        val libcpp = file("$ndkPath/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so")
-        if (libcpp.exists()) {
-            val destDir = File(jniLibsDir, "arm64-v8a")
+        val triples = mapOf("arm64-v8a" to "aarch64-linux-android", "x86_64" to "x86_64-linux-android")
+        targetAbis.forEach { abi ->
+            val triple = triples[abi] ?: throw GradleException("Unsupported ABI: $abi")
+            val libcpp = file("$ndkPath/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/$triple/libc++_shared.so")
+            if (!libcpp.exists()) {
+                throw GradleException("libc++_shared.so not found in NDK at: ${libcpp.absolutePath}")
+            }
+            val destDir = File(jniLibsDir, abi)
             destDir.mkdirs()
             libcpp.copyTo(File(destDir, "libc++_shared.so"), overwrite = true)
-            println("Copied libc++_shared.so from NDK")
-        } else {
-            throw GradleException("libc++_shared.so not found in NDK at: ${libcpp.absolutePath}")
+            println("Copied libc++_shared.so ($abi) from NDK")
         }
     }
 

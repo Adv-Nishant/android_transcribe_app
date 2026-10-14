@@ -5,3 +5,6 @@
 [target.aarch64-linux-android]
 # 16KB page alignment (required for Android 15+ / Google Play)
 rustflags = ["-C", "link-arg=-Wl,-z,max-page-size=16384", "-C", "link-arg=-lc++_shared"]
+
+[target.x86_64-linux-android]
+rustflags = ["-C", "link-arg=-Wl,-z,max-page-size=16384", "-C", "link-arg=-lc++_shared"]
