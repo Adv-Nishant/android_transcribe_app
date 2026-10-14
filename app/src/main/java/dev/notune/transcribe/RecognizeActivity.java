@@ -125,7 +125,7 @@ public class RecognizeActivity extends AppCompatActivity {
             audioPauser.abandon(this);
             pauseAudioActive = false;
         }
-        try { cleanupNative(); } catch (Throwable t) { /* ignore */ }
+        try { cleanupNative(this); } catch (Throwable t) { /* ignore */ }
     }
 
     // Called from Rust
@@ -215,7 +215,7 @@ public class RecognizeActivity extends AppCompatActivity {
 
     // Native methods
     private native void initNative(RecognizeActivity activity);
-    private native void cleanupNative();
+    private native void cleanupNative(RecognizeActivity self);
     private native void startRecording(boolean autoStop);
     private native void stopRecording();
     private native void cancelRecording();

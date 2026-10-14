@@ -18,12 +18,22 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_RecognizeActivity_initN
     *RECOG_STATE.lock().unwrap() = Some(state);
 }
 
+/// Only clears the session if it belongs to `activity`: a finishing popup
+/// is often destroyed after the next one was already created, and must not
+/// tear down the new popup's recording.
 #[no_mangle]
 pub unsafe extern "system" fn Java_dev_notune_transcribe_RecognizeActivity_cleanupNative(
-    _env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
+    activity: JObject,
 ) {
-    *RECOG_STATE.lock().unwrap() = None;
+    let mut guard = RECOG_STATE.lock().unwrap();
+    if guard
+        .as_ref()
+        .is_some_and(|s| env.is_same_object(&s.target_ref, &activity).unwrap_or(false))
+    {
+        *guard = None;
+    }
 }
 
 #[no_mangle]

@@ -448,13 +448,13 @@ public class RustInputMethodService extends InputMethodService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        cleanupNative();
+        cleanupNative(this);
         releaseAudioFocus();
     }
 
     // Native methods
     private native void initNative(RustInputMethodService service);
-    private native void cleanupNative();
+    private native void cleanupNative(RustInputMethodService self);
     private native void startRecording();
     private native void stopRecording();
     private native void cancelRecording();
