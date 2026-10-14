@@ -1,6 +1,7 @@
 package dev.notune.transcribe;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -158,15 +159,49 @@ public class RecognizeActivity extends AppCompatActivity {
                 return;
             }
 
-            ArrayList<String> results = new ArrayList<>();
-            results.add(text);
-
-            Intent data = new Intent();
-            data.putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, results);
-
-            setResult(Activity.RESULT_OK, data);
-            finish();
+            deliverResult(text.trim());
         });
+    }
+
+    private void deliverResult(String text) {
+        Intent request = getIntent();
+        // Search boxes (e.g. Chrome's omnibox) want a query, not a sentence: a
+        // trailing period would turn "example.com" into a search for "example.com.".
+        if (RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH.equals(
+                request.getStringExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL))
+                && text.endsWith(".") && !text.endsWith("..")) {
+            text = text.substring(0, text.length() - 1);
+        }
+
+        ArrayList<String> results = new ArrayList<>();
+        results.add(text);
+
+        Intent data = new Intent();
+        data.putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, results);
+        // Callers such as Chrome's voice search drop results that come without
+        // one confidence score per hypothesis. The engine has no calibrated
+        // score, so the single hypothesis is reported as confident.
+        data.putExtra(RecognizerIntent.EXTRA_CONFIDENCE_SCORES, new float[]{1.0f});
+
+        // Callers may ask for the results via a PendingIntent instead of the
+        // activity result (part of the RecognizerIntent contract).
+        PendingIntent resultsIntent = request.getParcelableExtra(
+                RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT);
+        if (resultsIntent != null) {
+            Intent fillIn = new Intent();
+            Bundle extra = request.getBundleExtra(
+                    RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT_BUNDLE);
+            if (extra != null) fillIn.putExtras(extra);
+            fillIn.putExtras(data);
+            try {
+                resultsIntent.send(this, Activity.RESULT_OK, fillIn);
+            } catch (PendingIntent.CanceledException e) {
+                Log.w(TAG, "Results PendingIntent was cancelled", e);
+            }
+        }
+
+        setResult(Activity.RESULT_OK, data);
+        finish();
     }
 
     private boolean isPauseAudioEnabled() {
