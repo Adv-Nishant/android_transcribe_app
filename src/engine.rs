@@ -40,6 +40,25 @@ const MAX_RUN_SAMPLES: usize = 60 * 16_000;
 /// quietest point so words aren't cut mid-syllable.
 const SPLIT_SEARCH_SAMPLES: usize = 10 * 16_000;
 
+/// Length of the next piece of `samples` to transcribe in one model run:
+/// everything if it fits, otherwise up to the quietest point near the limit.
+pub fn next_run_len(samples: &[f32]) -> usize {
+    if samples.len() <= MAX_RUN_SAMPLES {
+        samples.len()
+    } else {
+        crate::audio::find_quietest_split(
+            samples,
+            MAX_RUN_SAMPLES - SPLIT_SEARCH_SAMPLES,
+            MAX_RUN_SAMPLES,
+        )
+    }
+}
+
+/// True if `samples` is long enough that [`next_run_len`] would split it.
+pub fn exceeds_one_run(samples: &[f32]) -> bool {
+    samples.len() > MAX_RUN_SAMPLES
+}
+
 /// A loaded transcribe.cpp session plus the options applied to every run.
 pub struct Engine {
     session: transcribe_cpp::Session,
@@ -137,15 +156,7 @@ impl Engine {
         let mut text = String::new();
         let mut rest: &[f32] = &samples;
         while !rest.is_empty() {
-            let take = if rest.len() <= MAX_RUN_SAMPLES {
-                rest.len()
-            } else {
-                crate::audio::find_quietest_split(
-                    rest,
-                    MAX_RUN_SAMPLES - SPLIT_SEARCH_SAMPLES,
-                    MAX_RUN_SAMPLES,
-                )
-            };
+            let take = next_run_len(rest);
             let piece = self.run(&rest[..take])?;
             let piece = piece.trim();
             if !piece.is_empty() {

@@ -1,16 +1,35 @@
+//! Native backend for `TranscribeFileActivity` (transcribing a shared audio
+//! file).
+//!
+//! The file is streamed: Java decodes it block by block and pushes 16 kHz
+//! samples here, and every time more than one model run's worth of audio is
+//! buffered, the oldest run is transcribed (split at a quiet point) and
+//! dropped. Memory therefore stays bounded by about one run of audio no
+//! matter how long the file is, and transcription overlaps with decoding.
+//! Inference happens on the pushing (decoder) thread, which naturally
+//! throttles decoding to the model's speed.
+
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use jni::objects::{JClass, JFloatArray, JObject};
-use jni::sys::jint;
+use jni::sys::{jboolean, jint, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use once_cell::sync::Lazy;
 
-
 use crate::engine;
 
+struct FileSession {
+    buffer: Vec<f32>,
+    text: String,
+    failed: bool,
+}
+
 struct TranscribeFileState {
-    jvm: Arc<jni::JavaVM>,
     target_ref: jni::objects::GlobalRef,
+    session: Arc<Mutex<FileSession>>,
+    /// Set when the activity goes away; checked between model runs.
+    cancelled: Arc<AtomicBool>,
 }
 
 static STATE: Lazy<Mutex<Option<TranscribeFileState>>> = Lazy::new(|| Mutex::new(None));
@@ -26,14 +45,9 @@ fn notify_status(env: &mut JNIEnv, obj: &JObject, msg: &str) {
     }
 }
 
-fn notify_text(env: &mut JNIEnv, obj: &JObject, text: &str) {
+fn notify_string(env: &mut JNIEnv, obj: &JObject, method: &str, text: &str) {
     if let Ok(jtxt) = env.new_string(text) {
-        let _ = env.call_method(
-            obj,
-            "onTextTranscribed",
-            "(Ljava/lang/String;)V",
-            &[(&jtxt).into()],
-        );
+        let _ = env.call_method(obj, method, "(Ljava/lang/String;)V", &[(&jtxt).into()]);
     }
 }
 
@@ -54,101 +68,155 @@ pub unsafe extern "system" fn Java_dev_notune_transcribe_TranscribeFileActivity_
         .expect("Failed to ref activity");
 
     let state = TranscribeFileState {
-        jvm: vm_arc.clone(),
         target_ref: target_ref.clone(),
+        session: Arc::new(Mutex::new(FileSession {
+            buffer: Vec::new(),
+            text: String::new(),
+            failed: false,
+        })),
+        cancelled: Arc::new(AtomicBool::new(false)),
     };
-    *STATE.lock().unwrap() = Some(state);
+    if let Some(old) = STATE.lock().unwrap().replace(state) {
+        old.cancelled.store(true, Ordering::SeqCst);
+    }
 
     // Load engine in background
-    let vm_clone = vm_arc.clone();
-    let target_ref_clone = target_ref.clone();
-
     std::thread::spawn(move || {
-        let _ = engine::ensure_loaded_from_thread(&vm_clone, &target_ref_clone);
+        let _ = engine::ensure_loaded_from_thread(&vm_arc, &target_ref);
     });
 }
 
+/// Only ends the session if it belongs to `activity`: the previous screen is
+/// often destroyed after the next one was created, and must not cancel it.
 #[no_mangle]
 pub unsafe extern "system" fn Java_dev_notune_transcribe_TranscribeFileActivity_cleanupNative(
-    _env: JNIEnv,
-    _class: JClass,
-) {
-    *STATE.lock().unwrap() = None;
-}
-
-#[no_mangle]
-pub unsafe extern "system" fn Java_dev_notune_transcribe_TranscribeFileActivity_transcribeAudio(
     env: JNIEnv,
     _class: JClass,
+    activity: JObject,
+) {
+    let mut guard = STATE.lock().unwrap();
+    if guard
+        .as_ref()
+        .is_some_and(|s| env.is_same_object(&s.target_ref, &activity).unwrap_or(false))
+    {
+        if let Some(state) = guard.take() {
+            state.cancelled.store(true, Ordering::SeqCst);
+        }
+    }
+}
+
+/// Session handles of `activity`'s session for its decoder thread, taken
+/// without holding STATE during inference (the UI thread's cleanup must never
+/// wait on a model run). None if the session belongs to another screen.
+fn session_handles(
+    env: &JNIEnv,
+    activity: &JObject,
+) -> Option<(Arc<Mutex<FileSession>>, Arc<AtomicBool>, jni::objects::GlobalRef)> {
+    let guard = STATE.lock().unwrap();
+    guard
+        .as_ref()
+        .filter(|s| env.is_same_object(&s.target_ref, activity).unwrap_or(false))
+        .map(|s| (s.session.clone(), s.cancelled.clone(), s.target_ref.clone()))
+}
+
+/// Transcribes `piece` and appends it to the session text. Returns false on
+/// error (reported to the activity) or cancellation.
+fn transcribe_piece(
+    env: &mut JNIEnv,
+    target: &JObject,
+    session: &mut FileSession,
+    piece: Vec<f32>,
+    cancelled: &AtomicBool,
+) -> bool {
+    if cancelled.load(Ordering::SeqCst) || session.failed {
+        return false;
+    }
+    if !engine::is_current() && engine::ensure_loaded(env, target).is_err() {
+        session.failed = true;
+        return false;
+    }
+    let Some(eng) = engine::get_engine() else {
+        notify_status(env, target, "Error: model not loaded");
+        session.failed = true;
+        return false;
+    };
+    match engine::transcribe_shared(&eng, piece) {
+        Ok(text) => {
+            let text = text.trim();
+            if !text.is_empty() {
+                if !session.text.is_empty() {
+                    session.text.push(' ');
+                }
+                session.text.push_str(text);
+            }
+            true
+        }
+        Err(e) => {
+            notify_status(env, target, &format!("Error: {}", e));
+            session.failed = true;
+            false
+        }
+    }
+}
+
+/// Appends decoded samples; transcribes full runs as they become available.
+/// Returns false if decoding should stop (cancelled or failed).
+#[no_mangle]
+pub unsafe extern "system" fn Java_dev_notune_transcribe_TranscribeFileActivity_pushSamples(
+    mut env: JNIEnv,
+    _class: JClass,
+    activity: JObject,
     samples_array: JFloatArray,
     length: jint,
-) {
-    let guard = STATE.lock().unwrap();
-    let state = match guard.as_ref() {
-        Some(s) => s,
-        None => return,
+) -> jboolean {
+    let Some((session, cancelled, target_ref)) = session_handles(&env, &activity) else {
+        return JNI_FALSE;
     };
-
-    let len = length as usize;
-    if len == 0 {
-        log::warn!("transcribeAudio called with empty buffer");
-        let jvm = state.jvm.clone();
-        let target_ref = state.target_ref.clone();
-        drop(guard);
-        if let Ok(mut env) = jvm.attach_current_thread() {
-            notify_status(
-                &mut env,
-                target_ref.as_obj(),
-                "Error: no audio data to transcribe",
-            );
-        }
-        return;
-    }
-
-    let mut buffer = vec![0.0f32; len];
-    if env
-        .get_float_array_region(&samples_array, 0, &mut buffer)
-        .is_err()
-    {
+    let len = length.max(0) as usize;
+    let mut chunk = vec![0.0f32; len];
+    if len > 0 && env.get_float_array_region(&samples_array, 0, &mut chunk).is_err() {
         log::error!("Failed to read float array from Java");
-        return;
+        return JNI_FALSE;
     }
 
-    let jvm = state.jvm.clone();
-    let target_ref = state.target_ref.clone();
-
-    // Drop the lock before spawning the thread
-    drop(guard);
-
-    std::thread::spawn(move || {
-        let mut env = match jvm.attach_current_thread() {
-            Ok(e) => e,
-            Err(_) => return,
-        };
-        let obj = target_ref.as_obj();
-
-        // Ensure engine is loaded (waits if another thread is loading)
-        if !engine::is_current() {
-            if let Err(_) = engine::ensure_loaded(&mut env, obj) {
-                return;
-            }
+    let mut session = session.lock().unwrap();
+    session.buffer.extend_from_slice(&chunk);
+    let target = target_ref.as_obj();
+    while engine::exceeds_one_run(&session.buffer) {
+        let take = engine::next_run_len(&session.buffer);
+        let piece: Vec<f32> = session.buffer.drain(..take).collect();
+        if !transcribe_piece(&mut env, target, &mut session, piece, &cancelled) {
+            return JNI_FALSE;
         }
+        let text = session.text.clone();
+        notify_string(&mut env, target, "onPartialText", &text);
+    }
+    if cancelled.load(Ordering::SeqCst) || session.failed {
+        JNI_FALSE
+    } else {
+        JNI_TRUE
+    }
+}
 
-        if let Some(eng_arc) = engine::get_engine() {
-            notify_status(&mut env, obj, "Transcribing...");
-
-            let res = engine::transcribe_shared(&eng_arc, buffer);
-
-            match res {
-                Ok(text) => {
-                    notify_text(&mut env, obj, &text);
-                }
-                Err(e) => {
-                    notify_status(&mut env, obj, &format!("Error: {}", e));
-                }
-            }
-        } else {
-            notify_status(&mut env, obj, "Error: model not loaded");
-        }
-    });
+/// Transcribes the remaining audio and delivers the full text.
+#[no_mangle]
+pub unsafe extern "system" fn Java_dev_notune_transcribe_TranscribeFileActivity_finishSamples(
+    mut env: JNIEnv,
+    _class: JClass,
+    activity: JObject,
+) {
+    let Some((session, cancelled, target_ref)) = session_handles(&env, &activity) else {
+        return;
+    };
+    let mut session = session.lock().unwrap();
+    let target = target_ref.as_obj();
+    let rest = std::mem::take(&mut session.buffer);
+    if !rest.is_empty() && !transcribe_piece(&mut env, target, &mut session, rest, &cancelled) {
+        return;
+    }
+    if session.failed || cancelled.load(Ordering::SeqCst) {
+        return;
+    }
+    let text = std::mem::take(&mut session.text);
+    notify_string(&mut env, target, "onTextTranscribed", &text);
 }
