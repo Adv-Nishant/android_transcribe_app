@@ -132,8 +132,7 @@ public class RustInputMethodService extends InputMethodService {
             switchKeyboardButton.setOnClickListener(v -> {
                 if (isRecording) {
                     pendingSwitchBack = true;
-                    stopRecording();
-                    updateRecordButtonUI(false);
+                    finishCapture();
                 } else {
                     switchToPreviousInputMethod();
                 }
@@ -240,12 +239,7 @@ public class RustInputMethodService extends InputMethodService {
                 }
 
                 if (isRecording) {
-                    stopRecording();
-                    if (pauseAudioActive) {
-                        audioPauser.abandon(this);
-                        pauseAudioActive = false;
-                    }
-                    updateRecordButtonUI(false);
+                    finishCapture();
                 } else {
                     if (isPauseAudioEnabled()) {
                         audioPauser.request(this);
@@ -264,6 +258,24 @@ public class RustInputMethodService extends InputMethodService {
             TextView errorView = new TextView(this);
             errorView.setText("Error loading keyboard: " + e.getMessage());
             return errorView;
+        }
+    }
+
+    /**
+     * Stops capture and hands the audio to transcription. Audio focus is
+     * released right away, so paused media can resume while the (possibly
+     * long) transcription runs.
+     */
+    private void finishCapture() {
+        stopRecording();
+        releaseAudioFocus();
+        updateRecordButtonUI(false);
+    }
+
+    private void releaseAudioFocus() {
+        if (pauseAudioActive) {
+            audioPauser.abandon(this);
+            pauseAudioActive = false;
         }
     }
 
@@ -316,10 +328,7 @@ public class RustInputMethodService extends InputMethodService {
                 return;
             }
         }
-        if (pauseAudioActive) {
-            audioPauser.abandon(this);
-            pauseAudioActive = false;
-        }
+        releaseAudioFocus();
     }
 
     @Override
@@ -388,10 +397,7 @@ public class RustInputMethodService extends InputMethodService {
     public void onDestroy() {
         super.onDestroy();
         cleanupNative();
-        if (pauseAudioActive) {
-            audioPauser.abandon(this);
-            pauseAudioActive = false;
-        }
+        releaseAudioFocus();
     }
 
     // Native methods
@@ -411,9 +417,8 @@ public class RustInputMethodService extends InputMethodService {
                 pendingSwitchBack = false;
                 switchToPreviousInputMethod();
             }
-            if (pauseAudioActive && status != null && status.startsWith("Error")) {
-                audioPauser.abandon(this);
-                pauseAudioActive = false;
+            if (status != null && status.startsWith("Error")) {
+                releaseAudioFocus();
             }
         });
     }
@@ -460,10 +465,7 @@ public class RustInputMethodService extends InputMethodService {
                 // Nothing recognized — don't insert a stray space.
                 updateRecordButtonUI(false);
                 if (statusView != null) statusView.setText("Tap to Record");
-                if (pauseAudioActive) {
-                    audioPauser.abandon(this);
-                    pauseAudioActive = false;
-                }
+                releaseAudioFocus();
                 if (pendingSwitchBack) {
                     pendingSwitchBack = false;
                     switchToPreviousInputMethod();
@@ -481,10 +483,7 @@ public class RustInputMethodService extends InputMethodService {
                 // text until a field is focused again instead of losing it.
                 pendingCommitText = committed;
             }
-            if (pauseAudioActive) {
-                audioPauser.abandon(this);
-                pauseAudioActive = false;
-            }
+            releaseAudioFocus();
             updateRecordButtonUI(false);
             if (statusView != null) statusView.setText("Tap to Record");
             if (pendingSwitchBack) {
