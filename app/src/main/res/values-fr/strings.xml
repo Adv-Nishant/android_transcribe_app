@@ -9,6 +9,7 @@
 
     <string name="section_subs">Sous-titres en direct</string>
     <string name="desc_subs">Affichez des sous-titres pour tout audio lu sur votre appareil. Après le démarrage, choisissez \'Partager tout l\'écran\' pour de meilleurs résultats.</string>
+    <string name="subs_unsupported">Les sous-titres en direct nécessitent Android 10 ou plus récent : les versions antérieures ne permettent pas de capturer le son des autres applications.</string>
     <string name="btn_subs_start">Démarrer les sous-titres en direct</string>
     <string name="btn_subs_advanced">Ignorer la boîte de dialogue d\'autorisation (avancé)</string>
     <string name="subs_advanced_title">Ignorer la boîte de dialogue de capture d\'écran</string>

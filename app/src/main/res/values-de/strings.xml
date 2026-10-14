@@ -9,6 +9,7 @@
 
     <string name="section_subs">Live-Untertitel</string>
     <string name="desc_subs">Untertitel für jede Audiowiedergabe auf deinem Gerät anzeigen. Wähle nach dem Start \'Gesamten Bildschirm teilen\' für beste Ergebnisse.</string>
+    <string name="subs_unsupported">Live-Untertitel benötigen Android 10 oder neuer: Ältere Versionen erlauben Apps nicht, den Ton anderer Apps aufzunehmen.</string>
     <string name="btn_subs_start">Live-Untertitel starten</string>
     <string name="btn_subs_advanced">Berechtigungsdialog überspringen (fortgeschritten)</string>
     <string name="subs_advanced_title">Bildschirmaufnahme-Dialog überspringen</string>

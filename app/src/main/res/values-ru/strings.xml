@@ -9,6 +9,7 @@
 
     <string name="section_subs">Субтитры в реальном времени</string>
     <string name="desc_subs">Показывайте субтитры для любого аудио, воспроизводимого на устройстве. После запуска выберите \'Демонстрация всего экрана\' для лучших результатов.</string>
+    <string name="subs_unsupported">Живым субтитрам нужен Android 10 или новее: более старые версии не позволяют приложениям записывать звук других приложений.</string>
     <string name="btn_subs_start">Запустить субтитры</string>
     <string name="btn_subs_advanced">Пропустить диалог разрешения (для опытных)</string>
     <string name="subs_advanced_title">Пропустить диалог захвата экрана</string>

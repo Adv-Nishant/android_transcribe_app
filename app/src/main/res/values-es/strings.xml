@@ -9,6 +9,7 @@
 
     <string name="section_subs">Subtítulos en directo</string>
     <string name="desc_subs">Muestra subtítulos para cualquier audio que se reproduzca en tu dispositivo. Tras iniciar, elige \'Compartir toda la pantalla\' para mejores resultados.</string>
+    <string name="subs_unsupported">Los subtítulos en directo requieren Android 10 o posterior: las versiones anteriores no permiten a las apps capturar el audio de otras apps.</string>
     <string name="btn_subs_start">Iniciar subtítulos en directo</string>
     <string name="btn_subs_advanced">Omitir el cuadro de permiso (avanzado)</string>
     <string name="subs_advanced_title">Omitir el cuadro de captura de pantalla</string>

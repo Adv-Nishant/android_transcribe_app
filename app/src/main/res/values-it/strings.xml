@@ -9,6 +9,7 @@
 
     <string name="section_subs">Sottotitoli in tempo reale</string>
     <string name="desc_subs">Mostra i sottotitoli per qualsiasi audio riprodotto sul dispositivo. Dopo l\'avvio, scegli \'Condividi tutto lo schermo\' per risultati migliori.</string>
+    <string name="subs_unsupported">I sottotitoli in tempo reale richiedono Android 10 o successivo: le versioni precedenti non consentono alle app di acquisire l\'audio di altre app.</string>
     <string name="btn_subs_start">Avvia sottotitoli in tempo reale</string>
     <string name="btn_subs_advanced">Salta la finestra di autorizzazione (avanzato)</string>
     <string name="subs_advanced_title">Salta la finestra di cattura schermo</string>

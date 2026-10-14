@@ -21,6 +21,11 @@ public class LiveSubtitleActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!LiveSubtitleService.isSupported()) {
+            Toast.makeText(this, R.string.subs_unsupported, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         if (!Settings.canDrawOverlays(this)) {

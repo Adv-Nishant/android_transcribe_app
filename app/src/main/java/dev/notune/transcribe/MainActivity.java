@@ -80,6 +80,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_subs_advanced).setOnClickListener(v -> showSubsAdvancedDialog());
+        if (!LiveSubtitleService.isSupported()) {
+            // Capturing other apps' audio needs Android 10.
+            startSubsButton.setEnabled(false);
+            findViewById(R.id.btn_subs_advanced).setVisibility(View.GONE);
+            ((TextView) findViewById(R.id.text_subs_desc)).setText(R.string.subs_unsupported);
+        }
 
         findViewById(R.id.btn_models).setOnClickListener(v ->
                 startActivity(new Intent(this, ModelsActivity.class)));
@@ -402,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             statusText.setText(status);
             // "Ready" may carry a suffix, e.g. "Ready (this model can't translate)".
-            if (status.startsWith("Ready")) {
+            if (status.startsWith("Ready") && LiveSubtitleService.isSupported()) {
                 startSubsButton.setEnabled(true);
             }
         });

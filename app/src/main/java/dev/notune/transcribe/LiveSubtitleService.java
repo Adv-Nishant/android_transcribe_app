@@ -29,6 +29,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 
+import androidx.annotation.RequiresApi;
+
 public class LiveSubtitleService extends Service {
     private static final String TAG = "LiveSubtitleService";
     public static final String ACTION_START = "dev.notune.transcribe.START_SUBTITLES";
@@ -56,6 +58,11 @@ public class LiveSubtitleService extends Service {
     private TextView mSubtitleText;
     private Handler mMainHandler;
 
+    /** Capturing other apps' audio (AudioPlaybackCapture) needs Android 10. */
+    public static boolean isSupported() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -69,6 +76,10 @@ public class LiveSubtitleService extends Service {
         if (intent == null) return START_NOT_STICKY;
 
         if (ACTION_START.equals(intent.getAction())) {
+            if (!isSupported()) {
+                stopSelf();
+                return START_NOT_STICKY;
+            }
             Notification notification = createNotification();
             try {
                 if (Build.VERSION.SDK_INT >= 29) {
@@ -101,6 +112,7 @@ public class LiveSubtitleService extends Service {
         return START_NOT_STICKY;
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private void startSubtitleSession(int code, Intent data) {
         if (isRecording) return;
 
@@ -237,6 +249,7 @@ public class LiveSubtitleService extends Service {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private void startAudioCapture() {
         Log.d(TAG, "Starting audio capture. MediaProjection: " + mMediaProjection);
         if (mMediaProjection == null) {

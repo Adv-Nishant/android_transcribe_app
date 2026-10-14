@@ -158,6 +158,7 @@
                     </LinearLayout>
 
                     <TextView
+                        android:id="@+id/text_subs_desc"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/desc_subs"
