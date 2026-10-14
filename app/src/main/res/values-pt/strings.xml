@@ -70,7 +70,7 @@
     <string name="models_delete">Excluir modelo</string>
     <string name="models_delete_confirm">Excluir %1$s do armazenamento do app?</string>
     <string name="models_language_section">Idioma</string>
-    <string name="models_language_desc">O idioma passado ao modelo. «Automático» deixa o modelo decidir. Se a fala for transcrita no idioma ou alfabeto errado, escolha seu idioma explicitamente. Idiomas não suportados pelo modelo ativo são ignorados.</string>
+    <string name="models_language_desc">O idioma passado ao modelo. «Automático» deixa o modelo decidir. O Whisper e outros modelos aos quais se pode indicar o idioma o respeitam; o modelo Parakeet integrado sempre detecta o idioma sozinho e ignora esta configuração. Idiomas não suportados pelo modelo ativo são ignorados.</string>
     <string name="models_language_auto">Automático</string>
     <string name="models_language_saved">Idioma salvo</string>
     <string name="models_translate">Traduzir para inglês</string>

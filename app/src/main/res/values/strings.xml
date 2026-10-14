@@ -75,7 +75,7 @@
     <string name="models_delete">Delete model</string>
     <string name="models_delete_confirm">Delete %1$s from the app\'s storage?</string>
     <string name="models_language_section">Language</string>
-    <string name="models_language_desc">The language passed to the model. “Automatic” lets the model decide. If speech is transcribed in the wrong language or script, pick your language explicitly. Languages the active model doesn\'t support are ignored.</string>
+    <string name="models_language_desc">The language passed to the model. “Automatic” lets the model decide. Whisper and other models that can be told the language follow it; the built-in Parakeet model always detects the language itself and ignores this setting. Languages the active model doesn\'t support are ignored.</string>
     <string name="models_language_auto">Automatic</string>
     <string name="models_language_saved">Language saved</string>
     <string name="models_translate">Translate to English</string>

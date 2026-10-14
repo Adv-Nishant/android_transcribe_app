@@ -70,7 +70,7 @@
     <string name="models_delete">Удалить модель</string>
     <string name="models_delete_confirm">Удалить %1$s из хранилища приложения?</string>
     <string name="models_language_section">Язык</string>
-    <string name="models_language_desc">Язык, передаваемый модели. «Автоматически» позволяет модели решать сама. Если речь распознаётся не на том языке или не в том алфавите, выберите язык явно. Языки, не поддерживаемые активной моделью, игнорируются.</string>
+    <string name="models_language_desc">Язык, передаваемый модели. «Автоматически» позволяет модели решать сама. Whisper и другие модели, которым можно задать язык, его учитывают; встроенная модель Parakeet всегда определяет язык сама и игнорирует эту настройку. Языки, не поддерживаемые активной моделью, игнорируются.</string>
     <string name="models_language_auto">Автоматически</string>
     <string name="models_language_saved">Язык сохранён</string>
     <string name="models_translate">Переводить на английский</string>

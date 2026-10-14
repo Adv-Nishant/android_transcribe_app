@@ -70,7 +70,7 @@
     <string name="models_delete">Supprimer le modèle</string>
     <string name="models_delete_confirm">Supprimer %1$s du stockage de l\'application ?</string>
     <string name="models_language_section">Langue</string>
-    <string name="models_language_desc">La langue transmise au modèle. « Automatique » laisse le modèle décider. Si la parole est transcrite dans la mauvaise langue ou le mauvais alphabet, choisissez votre langue explicitement. Les langues non prises en charge par le modèle actif sont ignorées.</string>
+    <string name="models_language_desc">La langue transmise au modèle. « Automatique » laisse le modèle décider. Whisper et les autres modèles auxquels on peut indiquer la langue la respectent ; le modèle Parakeet intégré détecte toujours la langue lui-même et ignore ce réglage. Les langues non prises en charge par le modèle actif sont ignorées.</string>
     <string name="models_language_auto">Automatique</string>
     <string name="models_language_saved">Langue enregistrée</string>
     <string name="models_translate">Traduire en anglais</string>
