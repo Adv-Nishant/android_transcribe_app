@@ -548,13 +548,20 @@ public class RustInputMethodService extends InputMethodService {
     // Commits transcribed text into the active input connection, optionally
     // selecting it afterwards (select_transcription setting).
     private void commitTranscribedText(InputConnection ic, String committed) {
+        // Keep the dictation apart from a word right before the cursor
+        // ("hello wor" + "Weather" must not become "hello worWeather").
+        CharSequence before = ic.getTextBeforeCursor(1, 0);
+        if (before != null && before.length() > 0
+                && !Character.isWhitespace(before.charAt(before.length() - 1))) {
+            committed = " " + committed;
+        }
         ic.commitText(committed, 1);
 
         if (!pendingSwitchBack && new File(getFilesDir(), "select_transcription").exists()) {
             android.view.inputmethod.ExtractedText et = ic.getExtractedText(
                 new android.view.inputmethod.ExtractedTextRequest(), 0);
             if (et != null) {
-                int end = et.selectionStart;
+                int end = et.startOffset + et.selectionStart;
                 int start = end - committed.length();
                 if (start >= 0) {
                     ic.setSelection(start, end);
