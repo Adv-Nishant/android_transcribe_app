@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<input-method xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- supportsSwitchingToNextInputMethod: the globe key switches keyboards, so
+     take part in the system's "next keyboard" rotation. -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsSwitchingToNextInputMethod="true">
     <subtype
         android:label="Voice"
         android:imeSubtypeMode="voice"
