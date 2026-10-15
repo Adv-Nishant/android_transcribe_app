@@ -106,4 +106,37 @@
 
     <string name="voice_help_title">Configuration de la saisie vocale</string>
     <string name="voice_help_body">Comment l\'utiliser\n• Ouvrez n\'importe quelle app et touchez le micro d\'un clavier/d\'une app pris en charge. Un petit panneau apparaît, vous parlez, touchez pour arrêter, et le texte est inséré. (Activez « Arrêt automatique après un silence » dans les paramètres pour qu\'il s\'arrête tout seul.)\n\nQuels claviers ouvrent le panneau vocal\n• Microsoft SwiftKey (non open source) et la recherche vocale des sites web ouvrent le panneau directement.\n• AnySoftKeyboard est la voie open source vers le panneau : sa touche micro l\'ouvre tant qu\'aucun clavier vocal n\'est activé sur votre système.\n\nAutres claviers open source\n• HeliBoard, FlorisBoard, OpenBoard, Fossify Keyboard et Unexpected Keyboard n\'ouvrent pas le panneau : leur touche micro bascule vers le clavier « Offline Voice Input ». Activez-le une fois (voir « Alternative : clavier vocal »), parlez, puis revenez avec sa touche de changement de clavier. FUTO Keyboard embarque sa propre saisie vocale.\n• Gboard n\'utilise que la saisie vocale de Google et ne peut pas du tout utiliser cette app.\n\nSi la saisie vocale de SwiftKey s\'ouvre à la place\n• Paramètres → Saisie riche → désactivez « Saisie vocale multimodale ».\n• Touchez ensuite à nouveau le micro et choisissez « Offline Voice Input ».\n\nSi Android demande quelle app utiliser\n• Choisissez « Offline Voice Input » et touchez « Toujours ».\n\nSi une autre app s\'ouvre toujours\n• Ouvrez Paramètres → Applications → cette app → « Ouvrir par défaut » → Effacer les valeurs par défaut, puis réessayez.</string>
+
+    <!-- Voice panel, keyboard, file transcription and live subtitles -->
+    <string name="voice_listening">Écoute… (touchez pour arrêter)</string>
+    <string name="voice_processing">Traitement…</string>
+    <string name="voice_need_mic">Autorisation du micro requise.\nAccordez-la dans l\'application.</string>
+    <string name="ime_tap_to_record">Touchez pour enregistrer</string>
+    <string name="ime_tap_to_stop">Touchez pour arrêter</string>
+    <string name="ime_listening">Écoute…</string>
+    <string name="ime_need_mic">Pas d\'autorisation du micro</string>
+    <string name="ime_need_mic_hint">Ouvrez l\'application pour l\'accorder</string>
+    <string name="ime_switch_keyboard">Changer de clavier</string>
+    <string name="ime_space">Espace</string>
+    <string name="ime_enter">Entrée</string>
+    <string name="ime_backspace">Retour arrière</string>
+    <string name="action_close">Fermer</string>
+    <string name="file_preparing">Préparation…</string>
+    <string name="file_decoding">Décodage de l\'audio…</string>
+    <string name="file_transcribing">Transcription…</string>
+    <string name="file_transcribing_progress">Transcription… %1$s / %2$s</string>
+    <string name="file_transcribing_at">Transcription… %1$s</string>
+    <string name="file_copy">Copier dans le presse-papiers</string>
+    <string name="file_copied">Copié dans le presse-papiers</string>
+    <string name="file_copied_auto">Transcription copiée dans le presse-papiers</string>
+    <string name="file_no_audio">Aucun fichier audio reçu</string>
+    <string name="file_decode_error">Impossible de décoder ce fichier audio</string>
+    <string name="file_no_speech">Aucune parole reconnue dans ce fichier</string>
+    <string name="subs_waiting">En attente d\'audio…</string>
+    <string name="subs_notification_title">Sous-titres en direct actifs</string>
+    <string name="subs_notification_text">Sous-titrage du son lu sur cet appareil</string>
+    <string name="subs_stop">Arrêter</string>
+    <string name="subs_grant_overlay">Veuillez autoriser « Afficher par-dessus les autres applis »</string>
+    <string name="subs_overlay_required">Les sous-titres en direct nécessitent l\'autorisation « Afficher par-dessus les autres applis »</string>
+    <string name="subs_capture_denied">La capture d\'écran a été refusée</string>
 </resources>

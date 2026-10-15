@@ -226,8 +226,8 @@ public class RustInputMethodService extends InputMethodService {
                 // Check microphone permission
                 if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
                         != PackageManager.PERMISSION_GRANTED) {
-                    if (statusView != null) statusView.setText("No mic permission - grant in app");
-                    if (hintView != null) hintView.setText("Open the app to grant permission");
+                    if (statusView != null) statusView.setText(R.string.ime_need_mic);
+                    if (hintView != null) hintView.setText(R.string.ime_need_mic_hint);
                     return;
                 }
 
@@ -442,11 +442,11 @@ public class RustInputMethodService extends InputMethodService {
         }
         tintRecordButton(recording);
         if (recording) {
-            statusView.setText("Listening...");
-            hintView.setText("Tap to Stop");
+            statusView.setText(R.string.ime_listening);
+            hintView.setText(R.string.ime_tap_to_stop);
         } else {
-            statusView.setText("Processing...");
-            hintView.setText("Tap to Record");
+            statusView.setText(R.string.voice_processing);
+            hintView.setText(R.string.ime_tap_to_record);
             if (micLevelView != null) micLevelView.setLevel(0f);
         }
     }
@@ -510,9 +510,9 @@ public class RustInputMethodService extends InputMethodService {
             if (isError) {
                 statusView.setText(lastStatus);
             } else if (isTranscribing || isWaiting) {
-                statusView.setText("Processing...");
+                statusView.setText(R.string.voice_processing);
             } else {
-                statusView.setText("Tap to Record");
+                statusView.setText(R.string.ime_tap_to_record);
             }
         }
 
@@ -531,7 +531,7 @@ public class RustInputMethodService extends InputMethodService {
         }
 
         if (hintView != null && !isRecording) {
-            hintView.setText("Tap to Record");
+            hintView.setText(R.string.ime_tap_to_record);
         }
     }
 
@@ -541,7 +541,7 @@ public class RustInputMethodService extends InputMethodService {
             if (text == null || text.trim().isEmpty()) {
                 // Nothing recognized — don't insert a stray space.
                 updateRecordButtonUI(false);
-                if (statusView != null) statusView.setText("Tap to Record");
+                if (statusView != null) statusView.setText(R.string.ime_tap_to_record);
                 releaseAudioFocus();
                 if (pendingSwitchBack) {
                     pendingSwitchBack = false;
@@ -562,7 +562,7 @@ public class RustInputMethodService extends InputMethodService {
             }
             releaseAudioFocus();
             updateRecordButtonUI(false);
-            if (statusView != null) statusView.setText("Tap to Record");
+            if (statusView != null) statusView.setText(R.string.ime_tap_to_record);
             if (pendingSwitchBack) {
                 pendingSwitchBack = false;
                 switchAwayFromVoiceKeyboard();

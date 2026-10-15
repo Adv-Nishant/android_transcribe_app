@@ -61,18 +61,18 @@ public class TranscribeFileActivity extends AppCompatActivity {
                 ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("Transcription", text);
                 clipboard.setPrimaryClip(clip);
-                Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.file_copied, Toast.LENGTH_SHORT).show();
             }
         });
 
         Uri audioUri = getAudioUri();
         if (audioUri == null) {
-            statusText.setText("Error: No audio file received");
+            statusText.setText(R.string.file_no_audio);
             progressBar.setVisibility(View.GONE);
             return;
         }
 
-        statusText.setText("Loading model...");
+        statusText.setText(R.string.models_loading);
         initNative(this);
     }
 
@@ -115,7 +115,7 @@ public class TranscribeFileActivity extends AppCompatActivity {
                 // start a second decode.
                 if (!decodeStarted) {
                     decodeStarted = true;
-                    statusText.setText("Decoding audio...");
+                    statusText.setText(R.string.file_decoding);
                     startDecodeAndTranscribe();
                 }
             } else if (status != null && status.startsWith("Error")) {
@@ -141,7 +141,7 @@ public class TranscribeFileActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             finished = true;
             if (text == null || text.trim().isEmpty()) {
-                showError("No speech recognized in this file");
+                showError(getString(R.string.file_no_speech));
                 return;
             }
             // Hide progress, show result
@@ -156,14 +156,14 @@ public class TranscribeFileActivity extends AppCompatActivity {
             ClipData clip = ClipData.newPlainText("Transcription", text);
             clipboard.setPrimaryClip(clip);
 
-            Toast.makeText(this, "Transcription copied to clipboard", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.file_copied_auto, Toast.LENGTH_LONG).show();
         });
     }
 
     private void startDecodeAndTranscribe() {
         Uri audioUri = getAudioUri();
         if (audioUri == null) {
-            statusText.setText("Error: No audio file");
+            statusText.setText(R.string.file_no_audio);
             return;
         }
 
@@ -179,14 +179,14 @@ public class TranscribeFileActivity extends AppCompatActivity {
                 }, () -> cancelled);
                 if (cancelled) return;
                 if (produced == 0) {
-                    showError("Error: Could not decode audio file");
+                    showError(getString(R.string.file_decode_error));
                     return;
                 }
-                runOnUiThread(() -> statusText.setText("Transcribing..."));
+                runOnUiThread(() -> statusText.setText(R.string.file_transcribing));
                 finishSamples(this);
             } catch (Exception e) {
                 Log.e(TAG, "Error decoding audio", e);
-                if (!cancelled) showError("Error: could not decode audio file (" + e.getMessage() + ")");
+                if (!cancelled) showError(getString(R.string.file_decode_error) + " (" + e.getMessage() + ")");
             }
         }, "transcribe-file");
         decodeThread.start();
@@ -196,8 +196,9 @@ public class TranscribeFileActivity extends AppCompatActivity {
     private void postProgress(long durationUs) {
         long doneSec = decodedSamples / AudioFileDecoder.TARGET_RATE;
         String msg = durationUs > 0
-                ? "Transcribing... " + formatTime(doneSec) + " / " + formatTime(durationUs / 1_000_000)
-                : "Transcribing... " + formatTime(doneSec);
+                ? getString(R.string.file_transcribing_progress,
+                        formatTime(doneSec), formatTime(durationUs / 1_000_000))
+                : getString(R.string.file_transcribing_at, formatTime(doneSec));
         runOnUiThread(() -> {
             if (!finished) statusText.setText(msg);
         });

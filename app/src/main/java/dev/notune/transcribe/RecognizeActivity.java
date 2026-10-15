@@ -67,13 +67,13 @@ public class RecognizeActivity extends AppCompatActivity {
         // Permission check
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
-            status.setText("Microphone permission required.\nGrant it in the main app.");
+            status.setText(R.string.voice_need_mic);
             return;
         }
 
         initNative(this);
         isRecording = true;
-        status.setText("Listening... (Tap to stop)");
+        status.setText(R.string.voice_listening);
         if (isPauseAudioEnabled()) {
             audioPauser.request(this);
             pauseAudioActive = true;
@@ -85,7 +85,7 @@ public class RecognizeActivity extends AppCompatActivity {
     private void finishRecording() {
         if (!isRecording) return;
         isRecording = false;
-        status.setText("Processing...");
+        status.setText(R.string.voice_processing);
         stopRecording();
         if (pauseAudioActive) {
             audioPauser.abandon(this);
@@ -134,9 +134,9 @@ public class RecognizeActivity extends AppCompatActivity {
             final String shown;
             if ("Ready".equals(s)) {
                 // The model-ready status can arrive after recording started.
-                shown = isRecording ? "Listening... (Tap to stop)" : "Ready";
+                shown = isRecording ? getString(R.string.voice_listening) : s;
             } else if ("Listening...".equals(s)) {
-                shown = "Listening... (Tap to stop)";
+                shown = getString(R.string.voice_listening);
             } else {
                 shown = s;
             }

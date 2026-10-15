@@ -106,4 +106,37 @@
 
     <string name="voice_help_title">Einrichtung der Spracheingabe</string>
     <string name="voice_help_body">So funktioniert es\n• Öffne eine beliebige App und tippe auf das Mikrofon einer unterstützten Tastatur/App. Ein kleines Panel erscheint, du sprichst, tippst zum Stoppen, und der Text wird eingefügt. (Aktiviere „Auto-Stopp bei Stille“ in den Einstellungen, damit es von selbst stoppt.)\n\nWelche Tastaturen öffnen das Sprach-Panel\n• Microsoft SwiftKey (nicht Open Source) und die Sprachsuche auf Websites öffnen das Panel direkt.\n• AnySoftKeyboard ist der Open-Source-Weg zum Panel: Seine Mikrofontaste öffnet es, solange auf deinem System keine Sprach-Tastatur aktiviert ist.\n\nAndere Open-Source-Tastaturen\n• HeliBoard, FlorisBoard, OpenBoard, Fossify Keyboard und Unexpected Keyboard öffnen das Panel nicht: Ihre Mikrofontaste wechselt stattdessen zur „Offline Voice Input“-Tastatur. Aktiviere sie einmal (siehe „Alternative: Sprach-Tastatur“), sprich dort und kehre über deren Tastaturwechsel-Taste zurück. FUTO Keyboard bringt eine eigene Spracheingabe mit.\n• Gboard nutzt nur Googles eigene Spracheingabe und kann diese App gar nicht verwenden.\n\nFalls SwiftKeys eigene Spracheingabe öffnet\n• Einstellungen → Rich-Eingabe → „Multimodale Spracheingabe“ deaktivieren.\n• Tippe dann erneut auf das Mikrofon und wähle „Offline Voice Input“.\n\nFalls Android fragt, welche App verwendet werden soll\n• Wähle „Offline Voice Input“ und tippe auf „Immer“.\n\nFalls immer eine andere App öffnet\n• Öffne Einstellungen → Apps → diese App → „Standardmäßig öffnen“ → Standardeinstellungen löschen, und versuche es erneut.</string>
+
+    <!-- Voice panel, keyboard, file transcription and live subtitles -->
+    <string name="voice_listening">Ich höre zu… (zum Beenden tippen)</string>
+    <string name="voice_processing">Wird verarbeitet…</string>
+    <string name="voice_need_mic">Mikrofonberechtigung erforderlich.\nErteile sie in der App.</string>
+    <string name="ime_tap_to_record">Zum Aufnehmen tippen</string>
+    <string name="ime_tap_to_stop">Zum Beenden tippen</string>
+    <string name="ime_listening">Ich höre zu…</string>
+    <string name="ime_need_mic">Keine Mikrofonberechtigung</string>
+    <string name="ime_need_mic_hint">Öffne die App, um sie zu erteilen</string>
+    <string name="ime_switch_keyboard">Tastatur wechseln</string>
+    <string name="ime_space">Leerzeichen</string>
+    <string name="ime_enter">Eingabe</string>
+    <string name="ime_backspace">Rücktaste</string>
+    <string name="action_close">Schließen</string>
+    <string name="file_preparing">Wird vorbereitet…</string>
+    <string name="file_decoding">Audio wird dekodiert…</string>
+    <string name="file_transcribing">Wird transkribiert…</string>
+    <string name="file_transcribing_progress">Wird transkribiert… %1$s / %2$s</string>
+    <string name="file_transcribing_at">Wird transkribiert… %1$s</string>
+    <string name="file_copy">In die Zwischenablage kopieren</string>
+    <string name="file_copied">In die Zwischenablage kopiert</string>
+    <string name="file_copied_auto">Transkript in die Zwischenablage kopiert</string>
+    <string name="file_no_audio">Keine Audiodatei erhalten</string>
+    <string name="file_decode_error">Diese Audiodatei konnte nicht dekodiert werden</string>
+    <string name="file_no_speech">In dieser Datei wurde keine Sprache erkannt</string>
+    <string name="subs_waiting">Warte auf Audio…</string>
+    <string name="subs_notification_title">Live-Untertitel aktiv</string>
+    <string name="subs_notification_text">Untertitelt den Ton, der auf diesem Gerät abgespielt wird</string>
+    <string name="subs_stop">Beenden</string>
+    <string name="subs_grant_overlay">Bitte erlaube „Über anderen Apps einblenden“</string>
+    <string name="subs_overlay_required">Live-Untertitel benötigen die Berechtigung „Über anderen Apps einblenden“</string>
+    <string name="subs_capture_denied">Bildschirmaufnahme wurde abgelehnt</string>
 </resources>

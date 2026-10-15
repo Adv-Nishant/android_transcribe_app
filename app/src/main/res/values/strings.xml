@@ -112,4 +112,37 @@
 
     <string name="voice_help_title">Voice input setup</string>
     <string name="voice_help_body">How to use it\n• Open any app and tap the microphone on a supported keyboard/app. A small panel slides up, you speak, tap to stop, and the text is inserted. (Enable “Auto-stop after silence” in the settings to have it stop by itself.)\n\nWhich keyboards open the voice panel\n• Microsoft SwiftKey (not open source) and website voice search open the panel directly.\n• AnySoftKeyboard is the open-source way to get the panel: its mic key opens it as long as no voice keyboard is enabled on your system.\n\nOther open-source keyboards\n• HeliBoard, FlorisBoard, OpenBoard, Fossify Keyboard and Unexpected Keyboard don\'t open the panel: their mic key switches to the “Offline Voice Input” keyboard instead. Enable it once (see “Alternative: Voice keyboard”), speak there, and use its keyboard-switch key to go back. FUTO Keyboard ships its own voice input.\n• Gboard only uses Google\'s own voice typing and can\'t use this app at all.\n\nIf SwiftKey\'s own voice typing opens instead\n• Settings → Rich input → turn off “Multi-modal voice typing”.\n• Then tap the mic again and pick “Offline Voice Input”.\n\nIf Android asks which app to use\n• Choose “Offline Voice Input” and tap “Always”.\n\nIf another app always opens instead\n• Open Settings → Apps → that app → “Open by default” → Clear defaults, then try again.</string>
+
+    <!-- Voice panel, keyboard, file transcription and live subtitles -->
+    <string name="voice_listening">Listening… (tap to stop)</string>
+    <string name="voice_processing">Processing…</string>
+    <string name="voice_need_mic">Microphone permission required.\nGrant it in the main app.</string>
+    <string name="ime_tap_to_record">Tap to record</string>
+    <string name="ime_tap_to_stop">Tap to stop</string>
+    <string name="ime_listening">Listening…</string>
+    <string name="ime_need_mic">No microphone permission</string>
+    <string name="ime_need_mic_hint">Open the app to grant it</string>
+    <string name="ime_switch_keyboard">Switch keyboard</string>
+    <string name="ime_space">Space</string>
+    <string name="ime_enter">Enter</string>
+    <string name="ime_backspace">Backspace</string>
+    <string name="action_close">Close</string>
+    <string name="file_preparing">Preparing…</string>
+    <string name="file_decoding">Decoding audio…</string>
+    <string name="file_transcribing">Transcribing…</string>
+    <string name="file_transcribing_progress">Transcribing… %1$s / %2$s</string>
+    <string name="file_transcribing_at">Transcribing… %1$s</string>
+    <string name="file_copy">Copy to clipboard</string>
+    <string name="file_copied">Copied to clipboard</string>
+    <string name="file_copied_auto">Transcription copied to clipboard</string>
+    <string name="file_no_audio">No audio file received</string>
+    <string name="file_decode_error">Could not decode this audio file</string>
+    <string name="file_no_speech">No speech recognized in this file</string>
+    <string name="subs_waiting">Waiting for audio…</string>
+    <string name="subs_notification_title">Live subtitles active</string>
+    <string name="subs_notification_text">Captioning audio played on this device</string>
+    <string name="subs_stop">Stop</string>
+    <string name="subs_grant_overlay">Please allow “Display over other apps”</string>
+    <string name="subs_overlay_required">Live subtitles need the “Display over other apps” permission</string>
+    <string name="subs_capture_denied">Screen capture was denied</string>
 </resources>

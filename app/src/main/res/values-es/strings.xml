@@ -106,4 +106,37 @@
 
     <string name="voice_help_title">Configuración de la entrada de voz</string>
     <string name="voice_help_body">Cómo usarlo\n• Abre cualquier app y toca el micrófono de un teclado/una app compatible. Aparece un panel pequeño, hablas, tocas para detener y el texto se inserta. (Activa «Parada automática tras silencio» en los ajustes para que se detenga solo.)\n\nQué teclados abren el panel de voz\n• Microsoft SwiftKey (no es de código abierto) y la búsqueda por voz de los sitios web abren el panel directamente.\n• AnySoftKeyboard es la vía de código abierto al panel: su tecla de micrófono lo abre mientras no haya ningún teclado de voz activado en tu sistema.\n\nOtros teclados de código abierto\n• HeliBoard, FlorisBoard, OpenBoard, Fossify Keyboard y Unexpected Keyboard no abren el panel: su tecla de micrófono cambia al teclado «Offline Voice Input». Actívalo una vez (mira «Alternativa: teclado de voz»), habla allí y vuelve con su tecla de cambio de teclado. FUTO Keyboard trae su propia entrada de voz.\n• Gboard solo usa la entrada de voz de Google y no puede usar esta app en absoluto.\n\nSi se abre la entrada de voz propia de SwiftKey\n• Ajustes → Entrada enriquecida → desactiva «Entrada de voz multimodal».\n• Luego toca de nuevo el micrófono y elige «Offline Voice Input».\n\nSi Android pregunta qué app usar\n• Elige «Offline Voice Input» y toca «Siempre».\n\nSi siempre se abre otra app\n• Abre Ajustes → Aplicaciones → esa app → «Abrir de forma predeterminada» → Borrar valores predeterminados, e inténtalo de nuevo.</string>
+
+    <!-- Voice panel, keyboard, file transcription and live subtitles -->
+    <string name="voice_listening">Escuchando… (toca para detener)</string>
+    <string name="voice_processing">Procesando…</string>
+    <string name="voice_need_mic">Se necesita permiso de micrófono.\nConcédelo en la app.</string>
+    <string name="ime_tap_to_record">Toca para grabar</string>
+    <string name="ime_tap_to_stop">Toca para detener</string>
+    <string name="ime_listening">Escuchando…</string>
+    <string name="ime_need_mic">Sin permiso de micrófono</string>
+    <string name="ime_need_mic_hint">Abre la app para concederlo</string>
+    <string name="ime_switch_keyboard">Cambiar teclado</string>
+    <string name="ime_space">Espacio</string>
+    <string name="ime_enter">Intro</string>
+    <string name="ime_backspace">Retroceso</string>
+    <string name="action_close">Cerrar</string>
+    <string name="file_preparing">Preparando…</string>
+    <string name="file_decoding">Decodificando audio…</string>
+    <string name="file_transcribing">Transcribiendo…</string>
+    <string name="file_transcribing_progress">Transcribiendo… %1$s / %2$s</string>
+    <string name="file_transcribing_at">Transcribiendo… %1$s</string>
+    <string name="file_copy">Copiar al portapapeles</string>
+    <string name="file_copied">Copiado al portapapeles</string>
+    <string name="file_copied_auto">Transcripción copiada al portapapeles</string>
+    <string name="file_no_audio">No se recibió ningún archivo de audio</string>
+    <string name="file_decode_error">No se pudo decodificar este archivo de audio</string>
+    <string name="file_no_speech">No se reconoció voz en este archivo</string>
+    <string name="subs_waiting">Esperando audio…</string>
+    <string name="subs_notification_title">Subtítulos en directo activos</string>
+    <string name="subs_notification_text">Subtitulando el audio que se reproduce en este dispositivo</string>
+    <string name="subs_stop">Detener</string>
+    <string name="subs_grant_overlay">Permite «Mostrar sobre otras apps»</string>
+    <string name="subs_overlay_required">Los subtítulos en directo necesitan el permiso «Mostrar sobre otras apps»</string>
+    <string name="subs_capture_denied">Se denegó la captura de pantalla</string>
 </resources>

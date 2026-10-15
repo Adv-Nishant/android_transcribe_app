@@ -171,7 +171,7 @@ public class LiveSubtitleService extends Service {
 
         mMaxLines = SubtitlePrefs.getMaxLines(this);
         mSubtitleText = mOverlayView.findViewById(R.id.subs_text);
-        mSubtitleText.setText("Waiting for audio...");
+        mSubtitleText.setText(R.string.subs_waiting);
         
         View closeBtn = mOverlayView.findViewById(R.id.btn_close_subs);
         closeBtn.setOnClickListener(v -> {
@@ -446,10 +446,10 @@ public class LiveSubtitleService extends Service {
         PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE);
 
         return new Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("Live Subtitles Active")
-                .setContentText("Recording internal audio...")
+                .setContentTitle(getString(R.string.subs_notification_title))
+                .setContentText(getString(R.string.subs_notification_text))
                 .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-                .addAction(new Notification.Action.Builder(null, "Stop", stopPendingIntent).build())
+                .addAction(new Notification.Action.Builder(null, getString(R.string.subs_stop), stopPendingIntent).build())
                 .build();
     }
 
