@@ -67,20 +67,13 @@ pub fn extract_builtin_model(env: &mut JNIEnv, context: &JObject) -> anyhow::Res
     }
     std::fs::create_dir_all(&tmp_root)?;
 
-    let asset_manager_obj = env
-        .call_method(
-            context,
-            "getAssets",
-            "()Landroid/content/res/AssetManager;",
-            &[],
-        )?
-        .l()?;
-    copy_assets_recursively(env, &asset_manager_obj, BUILTIN_MODEL_DIR, &tmp_root)?;
-
-    // Only mark (and publish) the extraction if the model actually arrived.
-    let tmp_model_dir = tmp_root.join(BUILTIN_MODEL_DIR);
-    find_gguf(&tmp_model_dir)?;
-    std::fs::write(tmp_model_dir.join(EXTRACTION_COMPLETE_MARKER), "ok")?;
+    // Don't leave a partial copy (hundreds of MB) behind if this fails, e.g.
+    // because storage is full.
+    let extracted = extract_into(env, context, &tmp_root);
+    if extracted.is_err() {
+        let _ = std::fs::remove_dir_all(&tmp_root);
+    }
+    let tmp_model_dir = extracted?;
 
     if model_dir.exists() {
         log::info!("Replacing incomplete model directory");
@@ -91,6 +84,26 @@ pub fn extract_builtin_model(env: &mut JNIEnv, context: &JObject) -> anyhow::Res
     log::info!("Asset extraction complete");
 
     find_gguf(&model_dir)
+}
+
+/// Copies the bundled model into `tmp_root` and marks it complete; returns
+/// the model directory inside it.
+fn extract_into(env: &mut JNIEnv, context: &JObject, tmp_root: &Path) -> anyhow::Result<PathBuf> {
+    let asset_manager_obj = env
+        .call_method(
+            context,
+            "getAssets",
+            "()Landroid/content/res/AssetManager;",
+            &[],
+        )?
+        .l()?;
+    copy_assets_recursively(env, &asset_manager_obj, BUILTIN_MODEL_DIR, tmp_root)?;
+
+    // Only mark (and publish) the extraction if the model actually arrived.
+    let tmp_model_dir = tmp_root.join(BUILTIN_MODEL_DIR);
+    find_gguf(&tmp_model_dir)?;
+    std::fs::write(tmp_model_dir.join(EXTRACTION_COMPLETE_MARKER), "ok")?;
+    Ok(tmp_model_dir)
 }
 
 /// Lock file in filesDir serializing extraction across processes.
