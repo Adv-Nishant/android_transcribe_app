@@ -144,11 +144,7 @@ public class RustInputMethodService extends InputMethodService {
             backspaceRepeatRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    InputConnection ic = getCurrentInputConnection();
-                    if (ic != null) {
-                        ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DEL));
-                        ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DEL));
-                    }
+                    deleteBackward();
                     mainHandler.postDelayed(this, REPEAT_INTERVAL);
                 }
             };
@@ -157,22 +153,18 @@ public class RustInputMethodService extends InputMethodService {
             spaceRepeatRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    InputConnection ic = getCurrentInputConnection();
-                    if (ic != null) {
-                        ic.commitText(" ", 1);
-                    }
+                    insertSpace();
                     mainHandler.postDelayed(this, REPEAT_INTERVAL);
                 }
             };
 
+            // Touch drives the key repeat; the click listeners serve
+            // activation without touch (TalkBack, Switch Access, Voice Access),
+            // which calls performClick and never sends touch events.
             backspaceButton.setOnTouchListener((v, event) -> {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        InputConnection ic = getCurrentInputConnection();
-                        if (ic != null) {
-                            ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DEL));
-                            ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DEL));
-                        }
+                        deleteBackward();
                         mainHandler.postDelayed(backspaceRepeatRunnable, REPEAT_INITIAL_DELAY);
                         return true;
                     case MotionEvent.ACTION_UP:
@@ -182,14 +174,12 @@ public class RustInputMethodService extends InputMethodService {
                 }
                 return false;
             });
+            backspaceButton.setOnClickListener(v -> deleteBackward());
 
             spaceButton.setOnTouchListener((v, event) -> {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        InputConnection ic = getCurrentInputConnection();
-                        if (ic != null) {
-                            ic.commitText(" ", 1);
-                        }
+                        insertSpace();
                         mainHandler.postDelayed(spaceRepeatRunnable, REPEAT_INITIAL_DELAY);
                         return true;
                     case MotionEvent.ACTION_UP:
@@ -199,6 +189,7 @@ public class RustInputMethodService extends InputMethodService {
                 }
                 return false;
             });
+            spaceButton.setOnClickListener(v -> insertSpace());
 
             enterButton.setOnClickListener(v -> {
                 InputConnection ic = getCurrentInputConnection();
@@ -260,6 +251,21 @@ public class RustInputMethodService extends InputMethodService {
             TextView errorView = new TextView(this);
             errorView.setText("Error loading keyboard: " + e.getMessage());
             return errorView;
+        }
+    }
+
+    private void deleteBackward() {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null) {
+            ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DEL));
+            ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DEL));
+        }
+    }
+
+    private void insertSpace() {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null) {
+            ic.commitText(" ", 1);
         }
     }
 
