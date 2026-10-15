@@ -521,9 +521,11 @@ public class RustInputMethodService extends InputMethodService {
             progressBar.setVisibility(View.GONE);
         }
 
-        // Disable button only during transcription/processing/waiting or fatal errors
+        // Disable the button only while busy. After an error it stays usable:
+        // most errors are transient (no audio, storage was full while
+        // extracting the model, mic busy), and the next attempt retries.
         if (recordContainer != null) {
-            boolean disable = isTranscribing || isWaiting || isError;
+            boolean disable = isTranscribing || isWaiting;
             recordContainer.setEnabled(!disable);
             recordContainer.setAlpha(disable ? 0.5f : 1.0f);
         }
