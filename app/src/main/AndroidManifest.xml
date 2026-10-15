@@ -15,6 +15,13 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <!-- Keyboards call VoiceRecognitionService through SpeechRecognizer.
+             The framework checks the caller's mic permission inside this app,
+             which fails (ERROR_INSUFFICIENT_PERMISSIONS) for packages this app
+             can't see, so make input methods visible. -->
+        <intent>
+            <action android:name="android.view.InputMethod" />
+        </intent>
     </queries>
 
     <application
