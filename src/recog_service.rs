@@ -354,7 +354,7 @@ fn finalize(shared: Arc<Endpoint>, stream: Arc<Mutex<Option<SendStream>>>) {
 
     match engine::get_engine() {
         Some(eng_arc) => {
-            let res = engine::transcribe_shared(&eng_arc, buffer);
+            let res = engine::transcribe_speech(&eng_arc, buffer);
             // The client may have cancelled (and started a new session)
             // while this ran; its result must not be delivered anymore.
             if shared.cancelled.load(Ordering::SeqCst) {

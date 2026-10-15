@@ -140,7 +140,7 @@ fn transcribe_piece(
         session.failed = true;
         return false;
     };
-    match engine::transcribe_shared(&eng, piece) {
+    match engine::transcribe_speech(&eng, piece) {
         Ok(text) => {
             let text = text.trim();
             if !text.is_empty() {

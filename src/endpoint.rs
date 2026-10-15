@@ -1,5 +1,6 @@
 //! Energy-based speech endpointing, shared by the voice popup's auto-stop and
-//! the RecognitionService.
+//! the RecognitionService, and trimming of quiet stretches around finished
+//! recordings before they are transcribed.
 //!
 //! Works on fixed 20 ms frames (callback buffer sizes differ between devices)
 //! and compares each frame's energy to an adaptive noise floor: a low
@@ -28,6 +29,66 @@ const MIN_VOICED_RUN: u32 = 3;
 /// the input stream warms up); they would drag the noise floor far below the
 /// real background, so they are skipped.
 const DIGITAL_SILENCE_DB: f32 = -90.0;
+
+/// Audio kept before the first and after the last speech when trimming.
+const TRIM_MARGIN: usize = 16_000;
+/// Quiet stretches shorter than this are left alone.
+const MIN_TRIM: usize = 2 * 16_000;
+
+/// The part of a finished recording worth transcribing. Long quiet stretches
+/// before the first and after the last speech are cut, keeping a margin:
+/// after ~10 s of quiet the model drops or garbles a short phrase, and it
+/// invents sentences in long trailing silence (the user paused before
+/// speaking, or forgot to stop). Unlike the live endpointer, the noise floor
+/// is taken over the whole recording, so speech right at the start still
+/// stands out. Empty if the recording is digital silence only; the whole
+/// recording if no speech is found (very quiet speech is left to the model).
+pub fn speech_range(samples: &[f32]) -> std::ops::Range<usize> {
+    let mut prev: Option<f32> = None;
+    let smoothed: Vec<Option<f32>> = samples
+        .chunks(FRAME)
+        .map(|frame| {
+            let energy = frame.iter().map(|x| x * x).sum::<f32>() / frame.len() as f32;
+            let db = 10.0 * (energy + 1e-10).log10();
+            if db < DIGITAL_SILENCE_DB {
+                prev = None;
+                return None;
+            }
+            let s = prev.map_or(db, |p| 0.5 * p + 0.5 * db);
+            prev = Some(s);
+            Some(s)
+        })
+        .collect();
+
+    let mut live: Vec<f32> = smoothed.iter().flatten().copied().collect();
+    if live.is_empty() {
+        return 0..0;
+    }
+    live.sort_by(|a, b| a.total_cmp(b));
+    let floor = live[((live.len() - 1) as f32 * FLOOR_PERCENTILE) as usize];
+
+    let (mut first, mut last, mut run) = (None, 0, 0);
+    for (i, s) in smoothed.iter().enumerate() {
+        let voiced = s.is_some_and(|s| s > floor + SPEECH_DB && s > MIN_SPEECH_DB);
+        run = if voiced { run + 1 } else { 0 };
+        if run >= MIN_VOICED_RUN as usize {
+            first.get_or_insert(i + 1 - run);
+            last = i + 1;
+        }
+    }
+    let Some(first) = first else {
+        return 0..samples.len();
+    };
+    let mut start = (first * FRAME).saturating_sub(TRIM_MARGIN);
+    let mut end = (last * FRAME + TRIM_MARGIN).min(samples.len());
+    if start < MIN_TRIM {
+        start = 0;
+    }
+    if samples.len() - end < MIN_TRIM {
+        end = samples.len();
+    }
+    start..end
+}
 
 pub struct Endpointer {
     partial: Vec<f32>,
