@@ -14,9 +14,9 @@ import java.io.IOException;
 /**
  * Persists the user's dark-mode choice and applies it.
  *
- * Stored as a small file in the app's private files dir (not SharedPreferences)
- * so the value is reliably visible to the separate IME process (":ime"),
- * matching the existing marker-file settings (auto_record, etc.).
+ * Stored as a small file in the app's private files dir (not SharedPreferences),
+ * matching the existing marker-file settings (auto_record, etc.) that native
+ * code and the keyboard service read.
  *
  * Values are AppCompatDelegate night-mode constants:
  *   MODE_NIGHT_FOLLOW_SYSTEM (-1) | MODE_NIGHT_NO (1) | MODE_NIGHT_YES (2)
@@ -65,8 +65,8 @@ public final class ThemePrefs {
 
     /**
      * Returns a context whose resources reflect the chosen night mode, for the IME
-     * (a non-AppCompat Service in a separate process, so AppCompat's delegate can't
-     * theme it). FOLLOW_SYSTEM returns the base unchanged so it follows the system.
+     * (a non-AppCompat Service, so AppCompat's delegate can't theme it).
+     * FOLLOW_SYSTEM returns the base unchanged so it follows the system.
      */
     public static Context wrapForNight(Context base, int mode) {
         int night;

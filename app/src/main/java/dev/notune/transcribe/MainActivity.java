@@ -94,8 +94,8 @@ public class MainActivity extends AppCompatActivity {
         benchResultText = findViewById(R.id.text_bench_result);
         benchButton.setOnClickListener(v -> runBenchmark());
 
-        // Settings stored as marker files in filesDir (readable from the :ime
-        // process and native code without a content provider).
+        // Settings stored as marker files in filesDir (readable from the
+        // keyboard service and native code).
         bindMarkerSwitch(R.id.switch_auto_record, "auto_record", false);
         bindMarkerSwitch(R.id.switch_select_transcription, "select_transcription", false);
         bindMarkerSwitch(R.id.switch_pause_audio, "pause_audio", false);

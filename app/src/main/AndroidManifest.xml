@@ -121,12 +121,13 @@
                 android:resource="@xml/recognition_service" />
         </service>
 
-        <!-- IME Service -->
+        <!-- IME Service. Runs in the app process so the keyboard shares the one
+             loaded speech model with the popup, speech service and live
+             subtitles instead of holding a second copy (~0.5-1 GB). -->
         <service
             android:name=".RustInputMethodService"
             android:label="Offline Voice Input"
             android:permission="android.permission.BIND_INPUT_METHOD"
-            android:process=":ime"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.view.InputMethod" />

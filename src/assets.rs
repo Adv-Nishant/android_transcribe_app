@@ -34,11 +34,11 @@ pub fn files_dir(env: &mut JNIEnv, context: &JObject) -> anyhow::Result<PathBuf>
 /// Extracts the bundled model from APK assets (if not already done) and
 /// returns the path of its GGUF file.
 ///
-/// The app process and the keyboard's `:ime` process both call this, often
-/// at the same time on first start, and share filesDir. Extraction is
-/// therefore serialized with a file lock and written to a temporary
-/// directory that is renamed into place only once complete, so no process
-/// ever sees, deletes or loads another one's half-written model.
+/// The keyboard, popup and speech service may all call this at the same time
+/// on first start. Extraction is therefore serialized with a file lock and
+/// written to a temporary directory that is renamed into place only once
+/// complete, so no caller ever sees, deletes or loads another one's
+/// half-written model.
 pub fn extract_builtin_model(env: &mut JNIEnv, context: &JObject) -> anyhow::Result<PathBuf> {
     let base_path = files_dir(env, context)?;
     let model_dir = base_path.join(BUILTIN_MODEL_DIR);

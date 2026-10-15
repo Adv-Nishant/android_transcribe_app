@@ -100,10 +100,10 @@ public class RustInputMethodService extends InputMethodService {
     public View onCreateInputView() {
         Log.d(TAG, "onCreateInputView");
         try {
-            // The IME is a non-AppCompat Service in a separate process, so
-            // AppCompat's delegate can't theme it. Build a context that is
-            // night-aware (per the saved preference), wears the Material 3 theme,
-            // and picks up Material You dynamic color — matching the app.
+            // The IME is a non-AppCompat Service, so AppCompat's delegate can't
+            // theme it. Build a context that is night-aware (per the saved
+            // preference), wears the Material 3 theme, and picks up Material
+            // You dynamic color — matching the app.
             Context night = ThemePrefs.wrapForNight(this, ThemePrefs.getMode(this));
             viewIsNight = ThemePrefs.isNight(night);
             Context themed = DynamicColors.wrapContextIfAvailable(
@@ -412,7 +412,8 @@ public class RustInputMethodService extends InputMethodService {
         super.onStartInputView(info, restarting);
         inputActive = true;
         // Rebuild the keyboard if the theme preference changed while this
-        // (long-lived) IME process stayed alive, so it matches the app setting.
+        // (long-lived) keyboard service stayed alive, so it matches the app
+        // setting.
         if (inputView != null
                 && ThemePrefs.isNight(ThemePrefs.wrapForNight(this, ThemePrefs.getMode(this))) != viewIsNight) {
             View rebuilt = onCreateInputView();

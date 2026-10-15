@@ -218,10 +218,9 @@ static GLOBAL_ENGINE: Lazy<Mutex<Option<Arc<Mutex<Engine>>>>> =
     Lazy::new(|| Mutex::new(None));
 
 /// The settings the loaded engine was built from, and where they live.
-/// Settings are changed in the app process, but the keyboard runs in its own
-/// `:ime` process with its own engine; comparing against the files on disk
-/// lets every process notice a change and reload, instead of the keyboard
-/// keeping the old model or language until its process dies.
+/// Comparing against the files on disk before transcribing makes any user of
+/// the engine pick up a changed model or language, whichever screen changed
+/// it, instead of keeping the old one until the process dies.
 static LOADED_CONFIG: Lazy<Mutex<Option<(PathBuf, EngineConfig)>>> =
     Lazy::new(|| Mutex::new(None));
 
@@ -307,13 +306,62 @@ pub fn get_engine() -> Option<Arc<Mutex<Engine>>> {
     GLOBAL_ENGINE.lock().unwrap().clone()
 }
 
+/// Number of voice-input transcriptions (keyboard, popup, speech service,
+/// shared files) waiting for or using the engine. All features share one
+/// engine, which runs one transcription at a time, so live subtitles yield to
+/// these: a subtitle job doesn't start while one is pending, and voice input
+/// waits for at most the subtitle run already in flight.
+static INTERACTIVE: Lazy<(Mutex<usize>, Condvar)> = Lazy::new(|| (Mutex::new(0), Condvar::new()));
+
+struct InteractiveTurn;
+
+impl InteractiveTurn {
+    fn begin() -> InteractiveTurn {
+        *INTERACTIVE.0.lock().unwrap() += 1;
+        InteractiveTurn
+    }
+}
+
+impl Drop for InteractiveTurn {
+    fn drop(&mut self) {
+        let (lock, cvar) = &*INTERACTIVE;
+        let mut pending = lock.lock().unwrap();
+        *pending -= 1;
+        if *pending == 0 {
+            cvar.notify_all();
+        }
+    }
+}
+
+/// Transcribes for someone waiting on the result (voice input, a shared
+/// file): takes precedence over live subtitles.
+pub fn transcribe_shared(engine: &Arc<Mutex<Engine>>, samples: Vec<f32>) -> Result<String, String> {
+    let _turn = InteractiveTurn::begin();
+    transcribe_guarded(engine, samples)
+}
+
+/// Transcribes live subtitles: waits while voice input needs the engine.
+pub fn transcribe_background(
+    engine: &Arc<Mutex<Engine>>,
+    samples: Vec<f32>,
+) -> Result<String, String> {
+    {
+        let (lock, cvar) = &*INTERACTIVE;
+        let mut pending = lock.lock().unwrap();
+        while *pending > 0 {
+            pending = cvar.wait(pending).unwrap();
+        }
+    }
+    transcribe_guarded(engine, samples)
+}
+
 /// Runs a transcription on the shared engine. Two layers of hardening keep a
 /// single bad run from freezing every later one (the symptom would be an IME
 /// stuck at "Processing" until its process dies, since notify callbacks stop
 /// coming): a panic anywhere in the engine stack is caught and surfaced as a
 /// normal error, and a lock poisoned by an earlier panic is recovered instead
 /// of propagating the poison forever.
-pub fn transcribe_shared(engine: &Arc<Mutex<Engine>>, samples: Vec<f32>) -> Result<String, String> {
+fn transcribe_guarded(engine: &Arc<Mutex<Engine>>, samples: Vec<f32>) -> Result<String, String> {
     let audio_secs = samples.len() as f64 / 16_000.0;
     let started = std::time::Instant::now();
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
