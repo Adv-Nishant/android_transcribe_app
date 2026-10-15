@@ -41,7 +41,8 @@ public class VoiceRecognitionService extends RecognitionService {
     }
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private Callback mCallback;
+    /** The session in progress, or null. Touched on the main thread only. */
+    private Session session;
 
     @Override
     public void onCreate() {
@@ -55,20 +56,21 @@ public class VoiceRecognitionService extends RecognitionService {
 
     @Override
     protected void onStartListening(Intent recognizerIntent, Callback callback) {
-        mCallback = callback;
+        if (session != null) session.end();
+        session = new Session(callback);
 
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "RECORD_AUDIO not granted — open the app to grant it");
-            safeError(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS);
+            session.onError(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS);
             return;
         }
 
         try {
-            startListening(this);
+            startListening(session);
         } catch (Throwable t) {
             Log.e(TAG, "startListening failed", t);
-            safeError(SpeechRecognizer.ERROR_CLIENT);
+            session.onError(SpeechRecognizer.ERROR_CLIENT);
         }
     }
 
@@ -83,6 +85,10 @@ public class VoiceRecognitionService extends RecognitionService {
 
     @Override
     protected void onCancel(Callback callback) {
+        if (session != null) {
+            session.end();
+            session = null;
+        }
         try {
             cancelNative();
         } catch (Throwable t) {
@@ -92,6 +98,7 @@ public class VoiceRecognitionService extends RecognitionService {
 
     @Override
     public void onDestroy() {
+        if (session != null) session.end();
         try {
             destroyNative();
         } catch (Throwable t) {
@@ -100,80 +107,93 @@ public class VoiceRecognitionService extends RecognitionService {
         super.onDestroy();
     }
 
-    // --- Callbacks invoked from native code (any thread) ---------------------
-
-    public void onReadyForSpeech() {
-        mainHandler.post(() -> {
-            Callback cb = mCallback;
-            if (cb == null) return;
-            try { cb.readyForSpeech(new Bundle()); } catch (RemoteException ignored) {}
-        });
-    }
-
-    public void onBeginningOfSpeech() {
-        mainHandler.post(() -> {
-            Callback cb = mCallback;
-            if (cb == null) return;
-            try { cb.beginningOfSpeech(); } catch (RemoteException ignored) {}
-        });
-    }
-
-    public void onRmsChanged(float rmsdB) {
-        mainHandler.post(() -> {
-            Callback cb = mCallback;
-            if (cb == null) return;
-            try { cb.rmsChanged(rmsdB); } catch (RemoteException ignored) {}
-        });
-    }
-
-    public void onEndOfSpeech() {
-        mainHandler.post(() -> {
-            Callback cb = mCallback;
-            if (cb == null) return;
-            try { cb.endOfSpeech(); } catch (RemoteException ignored) {}
-        });
-    }
-
-    public void onResults(String text) {
-        mainHandler.post(() -> {
-            Callback cb = mCallback;
-            if (cb == null) return;
-            ArrayList<String> hypotheses = new ArrayList<>();
-            hypotheses.add(text);
-            Bundle bundle = new Bundle();
-            bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, hypotheses);
-            // Some clients drop results without a score per hypothesis.
-            bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{1.0f});
-            try { cb.results(bundle); } catch (RemoteException ignored) {}
-            mCallback = null;
-        });
-    }
-
-    public void onError(int errorCode) {
-        mainHandler.post(() -> {
-            Callback cb = mCallback;
-            if (cb == null) return;
-            try { cb.error(errorCode); } catch (RemoteException ignored) {}
-            mCallback = null;
-        });
-    }
-
     /** Invoked by the shared engine loader during model warm-up; UI-less here. */
     public void onStatusUpdate(String status) {
         Log.d(TAG, "engine: " + status);
     }
 
-    private void safeError(int errorCode) {
-        Callback cb = mCallback;
-        if (cb == null) return;
-        try { cb.error(errorCode); } catch (RemoteException ignored) {}
-        mCallback = null;
+    private interface Call {
+        void run(Callback cb) throws RemoteException;
+    }
+
+    /**
+     * One recognition session. Native code reports to it (from any thread);
+     * it forwards to its own Callback on the main thread until the session
+     * ends. Clients often cancel and restart while a transcription is still
+     * running, and the late result of the cancelled session must not reach
+     * the new one (it would replace what the user just said).
+     */
+    final class Session {
+        private Callback callback;
+
+        Session(Callback callback) {
+            this.callback = callback;
+        }
+
+        /** Main thread only. */
+        void end() {
+            callback = null;
+        }
+
+        private void post(Call call, boolean last) {
+            mainHandler.post(() -> {
+                Callback cb = callback;
+                if (cb == null) return;
+                if (last) {
+                    end();
+                    if (session == this) session = null;
+                }
+                try {
+                    call.run(cb);
+                } catch (RemoteException ignored) {
+                }
+            });
+        }
+
+        // --- Called from native code (any thread) ---------------------------
+
+        public void onReadyForSpeech() {
+            post(cb -> cb.readyForSpeech(new Bundle()), false);
+        }
+
+        public void onBeginningOfSpeech() {
+            post(Callback::beginningOfSpeech, false);
+        }
+
+        public void onRmsChanged(float rmsdB) {
+            post(cb -> cb.rmsChanged(rmsdB), false);
+        }
+
+        public void onEndOfSpeech() {
+            post(Callback::endOfSpeech, false);
+        }
+
+        public void onResults(String text) {
+            post(cb -> {
+                ArrayList<String> hypotheses = new ArrayList<>();
+                hypotheses.add(text);
+                Bundle bundle = new Bundle();
+                bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, hypotheses);
+                // Some clients drop results without a score per hypothesis.
+                bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{1.0f});
+                cb.results(bundle);
+            }, true);
+        }
+
+        public void onError(int errorCode) {
+            post(cb -> cb.error(errorCode), true);
+        }
+
+        /** Engine loading progress while finishing; UI-less here. */
+        public void onStatusUpdate(String status) {
+            Log.d(TAG, "engine: " + status);
+        }
     }
 
     // --- Native methods (implemented in src/recog_service.rs) ----------------
 
     private native void initNative(VoiceRecognitionService service);
-    private native void startListening(VoiceRecognitionService service);
+    private native void startListening(Session session);
     private native void stopListening();
     private native void cancelNative();
     private native void destroyNative();
