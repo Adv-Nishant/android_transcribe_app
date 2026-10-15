@@ -109,6 +109,7 @@
 
     <!-- Voice panel, keyboard, file transcription and live subtitles -->
     <string name="voice_listening">Слушаю… (нажмите, чтобы остановить)</string>
+    <string name="voice_no_speech">Речь не распознана</string>
     <string name="voice_processing">Обработка…</string>
     <string name="voice_need_mic">Нужно разрешение на микрофон.\nВыдайте его в приложении.</string>
     <string name="ime_tap_to_record">Нажмите для записи</string>

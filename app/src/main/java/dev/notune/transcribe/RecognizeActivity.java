@@ -10,6 +10,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.content.pm.PackageManager;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -154,6 +155,9 @@ public class RecognizeActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             if (text == null || text.trim().isEmpty()) {
                 // Nothing was recognized (e.g. auto-stop after silence only).
+                // Say so: otherwise the panel just vanishes as if it broke.
+                Toast.makeText(getApplicationContext(), R.string.voice_no_speech,
+                        Toast.LENGTH_SHORT).show();
                 setResult(Activity.RESULT_CANCELED);
                 finish();
                 return;

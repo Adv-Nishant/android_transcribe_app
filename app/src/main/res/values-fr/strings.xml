@@ -109,6 +109,7 @@
 
     <!-- Voice panel, keyboard, file transcription and live subtitles -->
     <string name="voice_listening">Écoute… (touchez pour arrêter)</string>
+    <string name="voice_no_speech">Aucune parole reconnue</string>
     <string name="voice_processing">Traitement…</string>
     <string name="voice_need_mic">Autorisation du micro requise.\nAccordez-la dans l\'application.</string>
     <string name="ime_tap_to_record">Touchez pour enregistrer</string>

@@ -109,6 +109,7 @@
 
     <!-- Voice panel, keyboard, file transcription and live subtitles -->
     <string name="voice_listening">Escuchando… (toca para detener)</string>
+    <string name="voice_no_speech">No se reconoció voz</string>
     <string name="voice_processing">Procesando…</string>
     <string name="voice_need_mic">Se necesita permiso de micrófono.\nConcédelo en la app.</string>
     <string name="ime_tap_to_record">Toca para grabar</string>

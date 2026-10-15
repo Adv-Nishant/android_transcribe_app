@@ -109,6 +109,7 @@
 
     <!-- Voice panel, keyboard, file transcription and live subtitles -->
     <string name="voice_listening">Ich höre zu… (zum Beenden tippen)</string>
+    <string name="voice_no_speech">Keine Sprache erkannt</string>
     <string name="voice_processing">Wird verarbeitet…</string>
     <string name="voice_need_mic">Mikrofonberechtigung erforderlich.\nErteile sie in der App.</string>
     <string name="ime_tap_to_record">Zum Aufnehmen tippen</string>
