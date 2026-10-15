@@ -132,16 +132,13 @@ public class RecognizeActivity extends AppCompatActivity {
     // Called from Rust
     public void onStatusUpdate(String s) {
         runOnUiThread(() -> {
-            final String shown;
-            if ("Ready".equals(s)) {
-                // The model-ready status can arrive after recording started.
-                shown = isRecording ? getString(R.string.voice_listening) : s;
-            } else if ("Listening...".equals(s)) {
-                shown = getString(R.string.voice_listening);
+            // Errors are shown as they are; everything else (model loading,
+            // "Transcribing...") just means listening or busy for the user.
+            if (s != null && s.startsWith("Error")) {
+                status.setText(s);
             } else {
-                shown = s;
+                status.setText(isRecording ? R.string.voice_listening : R.string.voice_processing);
             }
-            status.setText(shown);
         });
     }
 
