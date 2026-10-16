@@ -2,11 +2,16 @@ package dev.notune.transcribe;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -201,8 +206,42 @@ public class RecognizeActivity extends AppCompatActivity {
             }
         }
 
+        // Keyboards (e.g. SwiftKey's voice key) insert the result themselves
+        // once their field reconnects after this panel closes, and often lose
+        // it in that handover. Keep a copy on the clipboard so it can still
+        // be pasted.
+        if (isKeyboard(getCallingPackage())) {
+            copyToClipboard(text);
+        }
+
         setResult(Activity.RESULT_OK, data);
         finish();
+    }
+
+    private boolean isKeyboard(String pkg) {
+        if (pkg == null) return false;
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm == null) return false;
+        for (InputMethodInfo info : imm.getEnabledInputMethodList()) {
+            if (pkg.equals(info.getPackageName())) return true;
+        }
+        return false;
+    }
+
+    private void copyToClipboard(String text) {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard == null) return;
+        try {
+            clipboard.setPrimaryClip(ClipData.newPlainText("Transcription", text));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Could not copy the transcription", e);
+            return;
+        }
+        // Android 13+ confirms copies on its own.
+        if (Build.VERSION.SDK_INT < 33) {
+            Toast.makeText(getApplicationContext(), R.string.file_copied_auto,
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     private boolean isPauseAudioEnabled() {
