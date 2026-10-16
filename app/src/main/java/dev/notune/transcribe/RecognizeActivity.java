@@ -4,9 +4,12 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.WindowManager;
@@ -25,6 +28,8 @@ import java.util.ArrayList;
 public class RecognizeActivity extends AppCompatActivity {
 
     private static final String TAG = "OfflineVoiceInput";
+    /** How long a keyboard gets to insert the result before it is copied. */
+    private static final long CLIPBOARD_DELAY_MS = 1000;
 
     static {
         try {
@@ -207,11 +212,16 @@ public class RecognizeActivity extends AppCompatActivity {
         }
 
         // Keyboards (e.g. SwiftKey's voice key) insert the result themselves
-        // once their field reconnects after this panel closes, and often lose
-        // it in that handover. Keep a copy on the clipboard so it can still
-        // be pasted.
+        // once their field reconnects after this panel closes, and sometimes
+        // lose it in that handover. Keep a copy on the clipboard so it can
+        // still be pasted, but only after the keyboard had its chance:
+        // Android 13+ shows a clipboard preview on copy, which would
+        // otherwise pop up in the middle of that handover.
         if (isKeyboard(getCallingPackage())) {
-            copyToClipboard(text);
+            String copy = text;
+            Context app = getApplicationContext();
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    () -> copyToClipboard(app, copy), CLIPBOARD_DELAY_MS);
         }
 
         setResult(Activity.RESULT_OK, data);
@@ -228,8 +238,8 @@ public class RecognizeActivity extends AppCompatActivity {
         return false;
     }
 
-    private void copyToClipboard(String text) {
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+    private static void copyToClipboard(Context context, String text) {
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(CLIPBOARD_SERVICE);
         if (clipboard == null) return;
         try {
             clipboard.setPrimaryClip(ClipData.newPlainText("Transcription", text));
@@ -239,8 +249,7 @@ public class RecognizeActivity extends AppCompatActivity {
         }
         // Android 13+ confirms copies on its own.
         if (Build.VERSION.SDK_INT < 33) {
-            Toast.makeText(getApplicationContext(), R.string.file_copied_auto,
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.file_copied_auto, Toast.LENGTH_SHORT).show();
         }
     }
 
