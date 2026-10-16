@@ -8,6 +8,9 @@ height="80">](https://github.com/notune/android_transcribe_app/releases/latest)
 [<img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png"
 alt="Get it on Google Play"
 height="80">](https://play.google.com/store/apps/details?id=dev.notune.transcribe)
+[<img src=".github/badges/get-it-on-obtainium.png"
+alt="Get it on Obtainium"
+height="80">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22dev.notune.transcribe%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fnotune%2Fandroid_transcribe_app%22%2C%22author%22%3A%22notune%22%2C%22name%22%3A%22Offline%20Voice%20Input%22%7D)
 
 ## Features
 
@@ -76,7 +79,7 @@ This relies on the undocumented `PROJECT_MEDIA` app-op; on some OEM builds it ma
 
 ### Custom speech models
 
-The built-in Parakeet model works out of the box. Under **Manage speech models** you can additionally import any [transcribe.cpp](https://github.com/handy-computer/transcribe.cpp) GGUF model: download a `.gguf` file in your browser (the in-app *Where to get models* dialog lists direct links, e.g. a tiny 135 MB English-only Parakeet, the multilingual Nemotron 3.5 streaming model with punctuation, or Whisper large-v3-turbo), then import it via the system file picker and select it. The app itself needs no internet permission — model files are simply copied into the app's private storage. An optional language hint (e.g. `en-US`, or `auto`) can be set for imported models.
+The built-in Parakeet model works out of the box. (The F-Droid build has no built-in model, since F-Droid builds everything from source: on first start, the app shows how to download the same model in your browser and import it.) Under **Manage speech models** you can additionally import any [transcribe.cpp](https://github.com/handy-computer/transcribe.cpp) GGUF model: download a `.gguf` file in your browser (the in-app *Where to get models* dialog lists direct links, e.g. a tiny 135 MB English-only Parakeet, the multilingual Nemotron 3.5 streaming model with punctuation, or Whisper large-v3-turbo), then import it via the system file picker and select it. The app itself needs no internet permission — model files are simply copied into the app's private storage. An optional language hint (e.g. `en-US`, or `auto`) can be set for imported models.
 
 ## Prerequisites
 
@@ -107,22 +110,30 @@ org.gradle.java.home=/path/to/jdk17
 
 ## Building
 
+The app has two build flavors: `standard` (GitHub releases, Google Play) bundles the Parakeet model, `fdroid` is the same app without it.
+
 ### Debug APK
 ```bash
-./gradlew assembleDebug
-# Output: app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleStandardDebug
+# Output: app/build/outputs/apk/standard/debug/app-standard-debug.apk
 ```
 
 ### Release APK
 ```bash
-./gradlew assembleRelease
-# Output: app/build/outputs/apk/release/app-release.apk
+./gradlew assembleStandardRelease
+# Output: app/build/outputs/apk/standard/release/app-standard-release.apk
 ```
 
 ### Release AAB (Google Play)
 ```bash
-./gradlew bundleRelease
-# Output: app/build/outputs/bundle/release/app-release.aab
+./gradlew bundleStandardRelease
+# Output: app/build/outputs/bundle/standardRelease/app-standard-release.aab
+```
+
+### F-Droid flavor (no bundled model)
+```bash
+./gradlew assembleFdroidRelease
+# Output: app/build/outputs/apk/fdroid/release/app-fdroid-release.apk
 ```
 
 ### Signing
@@ -137,7 +148,7 @@ export STORE_PASS=yourpassword
 
 ### Model Assets
 
-The built-in Parakeet TDT GGUF model (~485 MB) is automatically downloaded from HuggingFace during the first build via a Gradle task. The checksum is verified with SHA-256. No manual download is needed.
+The built-in Parakeet TDT GGUF model (~485 MB) is automatically downloaded from HuggingFace during the first `standard` build via a Gradle task. The checksum is verified with SHA-256. No manual download is needed. `fdroid` builds never download it.
 
 ## Project Structure
 
@@ -152,10 +163,10 @@ The built-in Parakeet TDT GGUF model (~485 MB) is automatically downloaded from 
 ├── src/                                  # Rust source code (cdylib)
 ├── Cargo.toml                            # Rust crate manifest
 ├── build.gradle.kts                      # Root Gradle config
-├── app/build.gradle.kts                  # App module config (AGP 8.7.3)
+├── app/build.gradle.kts                  # App module config (AGP 8.13.2)
 ├── settings.gradle.kts
 ├── gradle.properties
-└── fastlane/metadata/android/            # F-Droid metadata
+└── fastlane/metadata/android/            # F-Droid store listing
 ```
 
 ## Acknowledgments
