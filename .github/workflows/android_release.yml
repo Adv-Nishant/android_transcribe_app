@@ -22,8 +22,12 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    # The action installs "tools platform-tools" by default, but the legacy
+    # "tools" package no longer exists in the SDK repository.
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        packages: 'platform-tools'
 
     - name: Install Android NDK
       run: |
