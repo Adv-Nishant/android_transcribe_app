@@ -12,12 +12,12 @@ val targetAbis = (project.findProperty("targetAbis") as String? ?: "arm64-v8a")
 
 android {
     namespace = "dev.notune.transcribe"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.notune.transcribe"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 20
         versionName = "0.2.0"
         ndk {
