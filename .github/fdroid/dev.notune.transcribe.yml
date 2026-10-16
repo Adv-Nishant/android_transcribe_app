@@ -1,0 +1,22 @@
+# The build recipe from F-Droid's metadata (fdroiddata: metadata/dev.notune.transcribe.yml),
+# used by build.sh to build the fdroid flavor exactly as F-Droid does. Keep it in sync
+# with the latest build entry there; CI fills in the placeholders.
+
+RepoType: git
+Repo: https://github.com/notune/android_transcribe_app.git
+
+Builds:
+  - versionName: @VERSION_NAME@
+    versionCode: @VERSION_CODE@
+    commit: @COMMIT@
+    subdir: app
+    sudo:
+      - apt-get update
+      - apt-get install -y rustup cmake make gcc libc-dev
+    gradle:
+      - fdroid
+    prebuild:
+      - rustup default 1.99.0
+      - rustup target add aarch64-linux-android
+      - cargo install cargo-ndk@4.1.2 --locked
+    ndk: 28.0.13004108

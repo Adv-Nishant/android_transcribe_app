@@ -75,8 +75,8 @@ jobs:
         echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
 
     # The standard flavor (bundled model) is what releases ship; the fdroid
-    # flavor is built too so a change that breaks the F-Droid build shows up
-    # here instead of on F-Droid's build server.
+    # flavor is built too so a change that breaks it shows up on any branch.
+    # (The published F-Droid APK comes from the fdroid job below.)
     - name: Build Release APKs
       env:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -104,19 +104,12 @@ jobs:
       run: |
         cp app/build/outputs/apk/standard/release/app-standard-release.apk android_transcribe_app_v${{ env.VERSION_NAME }}.apk
         cp app/build/outputs/bundle/standardRelease/app-standard-release.aab android_transcribe_app_v${{ env.VERSION_NAME }}.aab
-        cp app/build/outputs/apk/fdroid/release/app-fdroid-release.apk android_transcribe_app_v${{ env.VERSION_NAME }}_fdroid.apk
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release-apk-v${{ env.VERSION_NAME }}
         path: android_transcribe_app_v${{ env.VERSION_NAME }}.apk
-
-    - name: Upload F-Droid flavor APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-fdroid-apk-v${{ env.VERSION_NAME }}
-        path: android_transcribe_app_v${{ env.VERSION_NAME }}_fdroid.apk
 
     - name: Upload AAB Artifact
       uses: actions/upload-artifact@v4
@@ -134,3 +127,64 @@ jobs:
         files: |
           android_transcribe_app_v${{ env.VERSION_NAME }}.apk
           android_transcribe_app_v${{ env.VERSION_NAME }}.aab
+
+  # F-Droid builds the fdroid flavor from source and, if its APK matches this
+  # one, publishes ours with our signature (reproducible builds). So this one
+  # is built exactly as F-Droid's build server does it: same image, paths and
+  # recipe (.github/fdroid), then signed and attached to the release.
+  fdroid:
+    needs: build
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Read Version
+      run: |
+        echo "VERSION_NAME=$(grep 'versionName' app/build.gradle.kts | head -1 | grep -oP '"[^"]*"' | tr -d '"')" >> $GITHUB_ENV
+        echo "VERSION_CODE=$(grep -oP 'versionCode = \K\d+' app/build.gradle.kts)" >> $GITHUB_ENV
+
+    - name: Build like F-Droid
+      run: |
+        mkdir -p fdroid-out
+        docker run --rm -v "$PWD/.github/fdroid:/recipe:ro" -v "$PWD/fdroid-out:/out" \
+          --entrypoint /bin/bash registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie \
+          /recipe/build.sh "$GITHUB_SHA" "$VERSION_NAME" "$VERSION_CODE"
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        packages: 'build-tools;36.0.0'
+
+    - name: Sign APK
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASS: ${{ secrets.KEY_PASS }}
+        STORE_PASS: ${{ secrets.STORE_PASS }}
+      run: |
+        echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
+        # Keep the zip exactly as built: F-Droid copies this signature onto
+        # its own build, so only the signature block may be added.
+        $ANDROID_HOME/build-tools/36.0.0/apksigner sign --alignment-preserved true --ks release.keystore \
+          --ks-key-alias "$KEY_ALIAS" --ks-pass env:STORE_PASS --key-pass env:KEY_PASS \
+          --out android_transcribe_app_v${VERSION_NAME}_fdroid.apk \
+          fdroid-out/dev.notune.transcribe_${VERSION_CODE}.apk
+        rm release.keystore
+
+    - name: Upload F-Droid APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-fdroid-apk-v${{ env.VERSION_NAME }}
+        path: |
+          android_transcribe_app_v${{ env.VERSION_NAME }}_fdroid.apk
+          fdroid-out/dev.notune.transcribe_${{ env.VERSION_CODE }}.apk
+
+    - name: Attach to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: android_transcribe_app_v${{ env.VERSION_NAME }}_fdroid.apk
