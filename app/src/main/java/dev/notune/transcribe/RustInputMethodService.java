@@ -111,11 +111,17 @@ public class RustInputMethodService extends InputMethodService {
             View view = LayoutInflater.from(themed).inflate(R.layout.ime_layout, null);
             inputView = view;
 
-            // Handle window insets for avoiding navigation bar overlap
+            // Keep the keys above the navigation bar: pad the bottom by its
+            // height. When the keyboard starts cold, Android 16 can size the
+            // window from a layout pass that ran before these insets arrived and
+            // keep that size, cutting off the bottom row; lay out again once the
+            // padding changes so the window grows to fit it.
             view.setOnApplyWindowInsetsListener((v, insets) -> {
-                int paddingBottom = insets.getSystemWindowInsetBottom();
-                int originalPaddingBottom = v.getPaddingTop();
-                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), originalPaddingBottom + paddingBottom);
+                int paddingBottom = v.getPaddingTop() + insets.getSystemWindowInsetBottom();
+                if (v.getPaddingBottom() != paddingBottom) {
+                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), paddingBottom);
+                    v.post(v::requestLayout);
+                }
                 return insets;
             });
 
