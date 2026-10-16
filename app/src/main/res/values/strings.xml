@@ -68,14 +68,14 @@
     <string name="model_desc_sensevoice">English, Chinese, Cantonese, Japanese, Korean; fast</string>
     <string name="model_desc_whisper_small">99 languages, compact; translates to English</string>
     <string name="model_desc_nemotron">40 languages incl. Chinese, Japanese, Korean, Arabic, Hindi; with punctuation</string>
-    <string name="model_desc_parakeet_v3_q8">Like the built-in model, higher precision</string>
+    <string name="model_desc_parakeet_v3_q8">Parakeet TDT 0.6B v3 at higher precision</string>
     <string name="model_desc_whisper_turbo">99 languages, most accurate in this list; can\'t translate</string>
     <string name="model_desc_browse">Browse all transcribe.cpp models</string>
     <string name="models_no_browser">No browser found to open the link.</string>
     <string name="models_delete">Delete model</string>
     <string name="models_delete_confirm">Delete %1$s from the app\'s storage?</string>
     <string name="models_language_section">Language</string>
-    <string name="models_language_desc">The language passed to the model. “Automatic” lets the model decide. Whisper and other models that can be told the language follow it; the built-in Parakeet model always detects the language itself and ignores this setting. Languages the active model doesn\'t support are ignored.</string>
+    <string name="models_language_desc">The language passed to the model. “Automatic” lets the model decide. Whisper and other models that can be told the language follow it; Parakeet models always detect the language themselves and ignore this setting. Languages the active model doesn\'t support are ignored.</string>
     <string name="models_language_auto">Automatic</string>
     <string name="models_language_saved">Language saved</string>
     <string name="models_translate">Translate to English</string>
@@ -84,6 +84,18 @@
     <string name="models_threads_section">CPU threads</string>
     <string name="models_threads_desc">Threads used for transcription. “Automatic” picks a value based on this device\'s CPU. If transcription is slow, try different values; more threads is not always faster.</string>
     <string name="models_threads_auto">Automatic</string>
+    <!-- No model available (F-Droid builds start without one) -->
+    <string name="no_model_title">No speech model installed</string>
+    <string name="no_model_main">Voice input, live subtitles and file transcription need a speech model. Tap “Add a speech model” to download one in your browser and import it.</string>
+    <string name="no_model_steps">1. Tap “Download recommended model”. Your browser downloads Parakeet TDT 0.6B v3 (485 MB, 25 European languages).\n2. When the download has finished, tap “Import model file” below and pick the downloaded .gguf file (usually in Downloads).\n\nThe app itself stays offline; only your browser downloads the file. You can delete it from Downloads after importing.</string>
+    <string name="btn_download_recommended">Download recommended model (485 MB)</string>
+    <string name="btn_add_model">Add a speech model</string>
+    <string name="models_desc_no_builtin">Import any transcribe.cpp GGUF model you\'ve downloaded. The app stays fully offline; downloads happen in your browser.</string>
+    <string name="model_desc_recommended">Recommended · 25 European languages, fast and accurate</string>
+    <string name="voice_status_need_model">A speech model is needed before voice input can work.</string>
+    <string name="no_model_short">No speech model installed. Open Offline Voice Input to add one.</string>
+    <string name="voice_no_model">No speech model installed yet. Tap here to add one.</string>
+    <string name="ime_no_model_hint">Open the app to add one</string>
 
     <string name="section_benchmark">Benchmark</string>
     <string name="desc_benchmark">Measures how fast the active model transcribes on this device, using a built-in English test recording (11 s).</string>

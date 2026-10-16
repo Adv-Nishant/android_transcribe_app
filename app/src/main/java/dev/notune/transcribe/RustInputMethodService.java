@@ -237,6 +237,11 @@ public class RustInputMethodService extends InputMethodService {
                     return;
                 }
 
+                if (!isRecording && !ModelStore.hasAnyModel(this)) {
+                    updateUiState();
+                    return;
+                }
+
                 if (isRecording) {
                     finishCapture();
                 } else {
@@ -511,13 +516,16 @@ public class RustInputMethodService extends InputMethodService {
         boolean isTranscribing = lastStatus.contains("Transcribing") || lastStatus.contains("Processing");
         boolean isError = lastStatus.startsWith("Error");
         boolean isReady = lastStatus.equals("Ready");
+        boolean noModel = !isRecording && !ModelStore.hasAnyModel(this);
 
         // Don't show internal loading states to the user
         if (statusView != null && !isRecording) {
-            if (isError) {
+            if (isError && !lastStatus.equals(ModelStore.NO_MODEL_STATUS)) {
                 statusView.setText(lastStatus);
             } else if (isTranscribing || isWaiting) {
                 statusView.setText(R.string.voice_processing);
+            } else if (noModel) {
+                statusView.setText(R.string.no_model_title);
             } else {
                 statusView.setText(R.string.ime_tap_to_record);
             }
@@ -538,7 +546,7 @@ public class RustInputMethodService extends InputMethodService {
         }
 
         if (hintView != null && !isRecording) {
-            hintView.setText(R.string.ime_tap_to_record);
+            hintView.setText(noModel ? R.string.ime_no_model_hint : R.string.ime_tap_to_record);
         }
     }
 

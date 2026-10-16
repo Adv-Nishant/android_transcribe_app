@@ -52,7 +52,7 @@
     <string name="model_desc_sensevoice">Inglese, cinese, cantonese, giapponese, coreano; veloce</string>
     <string name="model_desc_whisper_small">99 lingue, compatto; traduce in inglese</string>
     <string name="model_desc_nemotron">40 lingue incl. cinese, giapponese, coreano, arabo, hindi; con punteggiatura</string>
-    <string name="model_desc_parakeet_v3_q8">Come il modello integrato, maggiore precisione</string>
+    <string name="model_desc_parakeet_v3_q8">Parakeet TDT 0.6B v3 con maggiore precisione</string>
     <string name="model_desc_whisper_turbo">99 lingue, il più accurato di questa lista; non traduce</string>
     <string name="model_desc_browse">Sfoglia tutti i modelli transcribe.cpp</string>
     <string name="models_desc">Il modello integrato funziona subito. Puoi anche importare qualsiasi modello GGUF di transcribe.cpp che hai scaricato. L\'app resta completamente offline; i download avvengono nel browser.</string>
@@ -70,7 +70,7 @@
     <string name="models_delete">Elimina modello</string>
     <string name="models_delete_confirm">Eliminare %1$s dall\'archivio dell\'app?</string>
     <string name="models_language_section">Lingua</string>
-    <string name="models_language_desc">La lingua passata al modello. «Automatico» lascia decidere al modello. Whisper e gli altri modelli a cui si può indicare la lingua la rispettano; il modello Parakeet integrato riconosce sempre la lingua da solo e ignora questa impostazione. Le lingue non supportate dal modello attivo vengono ignorate.</string>
+    <string name="models_language_desc">La lingua passata al modello. «Automatico» lascia decidere al modello. Whisper e gli altri modelli a cui si può indicare la lingua la rispettano; i modelli Parakeet riconoscono sempre la lingua da soli e ignorano questa impostazione. Le lingue non supportate dal modello attivo vengono ignorate.</string>
     <string name="models_language_auto">Automatico</string>
     <string name="models_language_saved">Lingua salvata</string>
     <string name="models_translate">Traduci in inglese</string>
@@ -79,6 +79,18 @@
     <string name="models_threads_section">Thread CPU</string>
     <string name="models_threads_desc">Thread usati per la trascrizione. «Automatico» sceglie un valore in base alla CPU di questo dispositivo. Se la trascrizione è lenta, prova altri valori; più thread non è sempre più veloce.</string>
     <string name="models_threads_auto">Automatico</string>
+    <!-- No model available (F-Droid builds start without one) -->
+    <string name="no_model_title">Nessun modello vocale installato</string>
+    <string name="no_model_main">L\'immissione vocale, i sottotitoli in tempo reale e la trascrizione di file richiedono un modello vocale. Tocca «Aggiungi un modello vocale» per scaricarne uno nel browser e importarlo.</string>
+    <string name="no_model_steps">1. Tocca «Scarica il modello consigliato». Il browser scarica Parakeet TDT 0.6B v3 (485 MB, 25 lingue europee).\n2. Al termine del download, tocca «Importa file del modello» qui sotto e scegli il file .gguf scaricato (di solito in Download).\n\nL\'app in sé resta offline; solo il browser scarica il file. Dopo l\'importazione puoi eliminarlo dai Download.</string>
+    <string name="btn_download_recommended">Scarica il modello consigliato (485 MB)</string>
+    <string name="btn_add_model">Aggiungi un modello vocale</string>
+    <string name="models_desc_no_builtin">Importa qualsiasi modello GGUF di transcribe.cpp che hai scaricato. L\'app resta completamente offline; i download avvengono nel browser.</string>
+    <string name="model_desc_recommended">Consigliato · 25 lingue europee, veloce e preciso</string>
+    <string name="voice_status_need_model">Per l\'immissione vocale è necessario un modello vocale.</string>
+    <string name="no_model_short">Nessun modello vocale installato. Apri Offline Voice Input per aggiungerne uno.</string>
+    <string name="voice_no_model">Ancora nessun modello vocale installato. Tocca qui per aggiungerne uno.</string>
+    <string name="ime_no_model_hint">Apri l\'app per aggiungerne uno</string>
 
     <string name="section_benchmark">Benchmark</string>
     <string name="desc_benchmark">Misura la velocità di trascrizione del modello attivo su questo dispositivo usando una registrazione di prova in inglese integrata (11 s).</string>

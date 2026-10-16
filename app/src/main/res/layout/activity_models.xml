@@ -54,12 +54,46 @@
                         android:layout_marginBottom="8dp"/>
 
                     <TextView
+                        android:id="@+id/txt_models_desc"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/models_desc"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginBottom="8dp"/>
+
+                    <!-- Shown while no model is available (F-Droid builds start
+                         without one): download in the browser, then import. -->
+                    <LinearLayout
+                        android:id="@+id/no_model_area"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/no_model_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorError"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/no_model_steps"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorError"
+                            android:layout_marginBottom="8dp"/>
+
+                        <Button
+                            android:id="@+id/btn_download_recommended"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/btn_download_recommended"/>
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/model_list"
@@ -74,6 +108,7 @@
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
                         android:layout_marginBottom="8dp"/>
 
                     <LinearLayout

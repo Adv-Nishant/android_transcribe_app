@@ -52,7 +52,7 @@
     <string name="model_desc_sensevoice">Englisch, Chinesisch, Kantonesisch, Japanisch, Koreanisch; schnell</string>
     <string name="model_desc_whisper_small">99 Sprachen, kompakt; übersetzt ins Englische</string>
     <string name="model_desc_nemotron">40 Sprachen inkl. Chinesisch, Japanisch, Koreanisch, Arabisch, Hindi; mit Interpunktion</string>
-    <string name="model_desc_parakeet_v3_q8">Wie das integrierte Modell, höhere Präzision</string>
+    <string name="model_desc_parakeet_v3_q8">Parakeet TDT 0.6B v3 mit höherer Präzision</string>
     <string name="model_desc_whisper_turbo">99 Sprachen, am genauesten in dieser Liste; kann nicht übersetzen</string>
     <string name="model_desc_browse">Alle transcribe.cpp-Modelle durchstöbern</string>
     <string name="models_desc">Das integrierte Modell funktioniert sofort. Du kannst auch jedes heruntergeladene transcribe.cpp-GGUF-Modell importieren. Die App bleibt vollständig offline; Downloads laufen über deinen Browser.</string>
@@ -70,7 +70,7 @@
     <string name="models_delete">Modell löschen</string>
     <string name="models_delete_confirm">%1$s aus dem Speicher der App löschen?</string>
     <string name="models_language_section">Sprache</string>
-    <string name="models_language_desc">Die an das Modell übergebene Sprache. „Automatisch“ lässt das Modell entscheiden. Whisper und andere Modelle, denen man die Sprache vorgeben kann, halten sich daran; das integrierte Parakeet-Modell erkennt die Sprache immer selbst und ignoriert diese Einstellung. Sprachen, die das aktive Modell nicht unterstützt, werden ignoriert.</string>
+    <string name="models_language_desc">Die an das Modell übergebene Sprache. „Automatisch“ lässt das Modell entscheiden. Whisper und andere Modelle, denen man die Sprache vorgeben kann, halten sich daran; Parakeet-Modelle erkennen die Sprache immer selbst und ignorieren diese Einstellung. Sprachen, die das aktive Modell nicht unterstützt, werden ignoriert.</string>
     <string name="models_language_auto">Automatisch</string>
     <string name="models_language_saved">Sprache gespeichert</string>
     <string name="models_translate">In Englisch übersetzen</string>
@@ -79,6 +79,18 @@
     <string name="models_threads_section">CPU-Threads</string>
     <string name="models_threads_desc">Threads für die Transkription. „Automatisch“ wählt einen Wert passend zur CPU dieses Geräts. Ist die Transkription langsam, probiere andere Werte; mehr Threads sind nicht immer schneller.</string>
     <string name="models_threads_auto">Automatisch</string>
+    <!-- No model available (F-Droid builds start without one) -->
+    <string name="no_model_title">Kein Sprachmodell installiert</string>
+    <string name="no_model_main">Spracheingabe, Live-Untertitel und Dateitranskription brauchen ein Sprachmodell. Tippe auf „Sprachmodell hinzufügen“, um eines im Browser herunterzuladen und zu importieren.</string>
+    <string name="no_model_steps">1. Tippe auf „Empfohlenes Modell herunterladen“. Dein Browser lädt Parakeet TDT 0.6B v3 herunter (485 MB, 25 europäische Sprachen).\n2. Wenn der Download fertig ist, tippe unten auf „Modelldatei importieren“ und wähle die heruntergeladene .gguf-Datei aus (meist unter Downloads).\n\nDie App selbst bleibt offline; nur dein Browser lädt die Datei herunter. Nach dem Import kannst du sie aus den Downloads löschen.</string>
+    <string name="btn_download_recommended">Empfohlenes Modell herunterladen (485 MB)</string>
+    <string name="btn_add_model">Sprachmodell hinzufügen</string>
+    <string name="models_desc_no_builtin">Importiere ein beliebiges heruntergeladenes transcribe.cpp-GGUF-Modell. Die App bleibt vollständig offline; Downloads laufen über deinen Browser.</string>
+    <string name="model_desc_recommended">Empfohlen · 25 europäische Sprachen, schnell und genau</string>
+    <string name="voice_status_need_model">Für die Spracheingabe wird ein Sprachmodell benötigt.</string>
+    <string name="no_model_short">Kein Sprachmodell installiert. Öffne Offline Voice Input, um eines hinzuzufügen.</string>
+    <string name="voice_no_model">Noch kein Sprachmodell installiert. Tippe hier, um eines hinzuzufügen.</string>
+    <string name="ime_no_model_hint">Öffne die App, um eines hinzuzufügen</string>
 
     <string name="section_benchmark">Benchmark</string>
     <string name="desc_benchmark">Misst, wie schnell das aktive Modell auf diesem Gerät transkribiert, anhand einer integrierten englischen Testaufnahme (11 s).</string>

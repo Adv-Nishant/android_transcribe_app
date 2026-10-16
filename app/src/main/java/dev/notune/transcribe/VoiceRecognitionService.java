@@ -2,6 +2,7 @@ package dev.notune.transcribe;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -63,6 +64,16 @@ public class VoiceRecognitionService extends RecognitionService {
                 != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "RECORD_AUDIO not granted — open the app to grant it");
             session.onError(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS);
+            return;
+        }
+
+        if (!ModelStore.hasAnyModel(this)) {
+            Log.w(TAG, "No speech model installed — open the app to add one");
+            // "Supported, but not downloaded yet"; older callers only know
+            // the generic server error.
+            session.onError(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    ? SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
+                    : SpeechRecognizer.ERROR_SERVER);
             return;
         }
 

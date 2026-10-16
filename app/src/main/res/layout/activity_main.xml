@@ -106,6 +106,15 @@
                         android:visibility="gone"
                         android:layout_marginBottom="8dp"/>
 
+                    <!-- Shown only while no speech model is available. -->
+                    <Button
+                        android:id="@+id/btn_voice_add_model"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_add_model"
+                        android:visibility="gone"
+                        android:layout_marginBottom="8dp"/>
+
                     <!-- One-tap self-test: fires the real RECOGNIZE_SPEECH intent. -->
                     <Button
                         android:id="@+id/btn_voice_try"
@@ -217,12 +226,25 @@
                     </LinearLayout>
 
                     <TextView
+                        android:id="@+id/text_models_desc"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/models_desc"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginBottom="8dp"/>
+
+                    <!-- Shown instead of the engine state while no model is
+                         available (F-Droid builds start without one). -->
+                    <TextView
+                        android:id="@+id/text_no_model"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/no_model_main"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorError"
+                        android:visibility="gone"
+                        android:layout_marginBottom="16dp"/>
 
                     <!-- Native engine warm-up state, updated from Rust. -->
                     <TextView

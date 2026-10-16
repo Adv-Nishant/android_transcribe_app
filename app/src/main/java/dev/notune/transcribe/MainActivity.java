@@ -46,10 +46,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView voiceStatusText;
     private ImageView voiceStatusIcon;
     private Button voiceGrantButton;
+    private Button voiceAddModelButton;
     private Button voiceTryButton;
     private Button startSubsButton;
     private Button benchButton;
     private TextView benchResultText;
+    private Button modelsButton;
+    private boolean benchRunning;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,12 +63,15 @@ public class MainActivity extends AppCompatActivity {
         voiceStatusText = findViewById(R.id.text_voice_status);
         voiceStatusIcon = findViewById(R.id.img_voice_status);
         voiceGrantButton = findViewById(R.id.btn_voice_grant);
+        voiceAddModelButton = findViewById(R.id.btn_voice_add_model);
         voiceTryButton = findViewById(R.id.btn_voice_try);
         startSubsButton = findViewById(R.id.btn_subs_start);
         Button imeSettingsButton = findViewById(R.id.btn_ime_settings);
         Button voiceHelpButton = findViewById(R.id.btn_voice_help);
 
         voiceGrantButton.setOnClickListener(v -> checkAndRequestPermissions());
+        voiceAddModelButton.setOnClickListener(v ->
+                startActivity(new Intent(this, ModelsActivity.class)));
         voiceTryButton.setOnClickListener(v -> launchVoiceTest());
         voiceHelpButton.setOnClickListener(v -> showHelpDialog());
 
@@ -87,8 +93,12 @@ public class MainActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.text_subs_desc)).setText(R.string.subs_unsupported);
         }
 
-        findViewById(R.id.btn_models).setOnClickListener(v ->
+        modelsButton = findViewById(R.id.btn_models);
+        modelsButton.setOnClickListener(v ->
                 startActivity(new Intent(this, ModelsActivity.class)));
+        if (!ModelStore.hasBuiltinModel(this)) {
+            ((TextView) findViewById(R.id.text_models_desc)).setText(R.string.models_desc_no_builtin);
+        }
 
         benchButton = findViewById(R.id.btn_benchmark);
         benchResultText = findViewById(R.id.text_bench_result);
@@ -147,9 +157,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Initial check
         updateVoiceInputStatus();
-
-        // Start init
-        initNative(this);
     }
 
     @Override
@@ -157,13 +164,31 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         // Re-check on return from the keyboard chooser, settings, or a test run.
         updateVoiceInputStatus();
+        updateModelState();
+        // (Re)load the engine: on first start, and after models were added or
+        // removed. Reports "Ready" right away if it is already loaded.
+        initNative(this);
+    }
+
+    /**
+     * Without any speech model (F-Droid builds start without one), nothing
+     * that transcribes can work: say so in red and lead to the models screen.
+     */
+    private void updateModelState() {
+        boolean hasModel = ModelStore.hasAnyModel(this);
+        findViewById(R.id.text_no_model).setVisibility(hasModel ? View.GONE : View.VISIBLE);
+        statusText.setVisibility(hasModel ? View.VISIBLE : View.GONE);
+        modelsButton.setText(hasModel ? R.string.btn_models : R.string.btn_add_model);
+        benchButton.setEnabled(hasModel && !benchRunning);
+        startSubsButton.setEnabled(hasModel && LiveSubtitleService.isSupported());
     }
 
     /**
      * Reflects whether the primary voice-input flow is ready. Apps (SwiftKey,
      * Firefox, …) fire {@link RecognizerIntent#ACTION_RECOGNIZE_SPEECH} via
      * {@code startActivityForResult}, which {@link RecognizeActivity} handles.
-     * The flow works when (a) the mic permission is granted and (b) our activity
+     * The flow works when (a) the mic permission is granted, (b) a speech model
+     * is available and (c) our activity
      * is what Android resolves that intent to — either because it is the sole
      * handler or because the user picked us as the default. This is deliberately
      * judged on the activity path, NOT on being the default {@code RecognitionService}.
@@ -171,6 +196,9 @@ public class MainActivity extends AppCompatActivity {
     private void updateVoiceInputStatus() {
         boolean micGranted = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED;
+
+        boolean hasModel = ModelStore.hasAnyModel(this);
+        voiceAddModelButton.setVisibility(micGranted && !hasModel ? View.VISIBLE : View.GONE);
 
         if (!micGranted) {
             setVoiceStatus(false, getString(R.string.voice_status_need_mic));
@@ -180,9 +208,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         voiceGrantButton.setVisibility(View.GONE);
-        voiceTryButton.setEnabled(true);
+        voiceTryButton.setEnabled(hasModel);
 
-        if (isOurAppDefaultRecognizer()) {
+        if (!hasModel) {
+            setVoiceStatus(false, getString(R.string.voice_status_need_model));
+        } else if (isOurAppDefaultRecognizer()) {
             setVoiceStatus(true, getString(R.string.voice_status_ready));
         } else {
             setVoiceStatus(false, getString(R.string.voice_status_almost));
@@ -328,6 +358,7 @@ public class MainActivity extends AppCompatActivity {
      * current model settings (language hint, translate).
      */
     private void runBenchmark() {
+        benchRunning = true;
         benchButton.setEnabled(false);
         benchResultText.setVisibility(View.VISIBLE);
         benchResultText.setText(R.string.bench_running);
@@ -340,6 +371,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Failed to read benchmark clip", e);
                 runOnUiThread(() -> {
                     benchResultText.setText(getString(R.string.bench_error, e.getMessage()));
+                    benchRunning = false;
                     benchButton.setEnabled(true);
                 });
                 return;
@@ -351,6 +383,7 @@ public class MainActivity extends AppCompatActivity {
     // Called from Rust when the benchmark run finishes.
     public void onBenchmarkResult(float audioSecs, float computeSecs, String error) {
         runOnUiThread(() -> {
+            benchRunning = false;
             benchButton.setEnabled(true);
             benchResultText.setVisibility(View.VISIBLE);
             if (error != null && !error.isEmpty()) {
@@ -406,7 +439,7 @@ public class MainActivity extends AppCompatActivity {
     // Called from Rust
     public void onStatusUpdate(String status) {
         runOnUiThread(() -> {
-            statusText.setText(status);
+            statusText.setText(ModelStore.displayStatus(this, status));
             // "Ready" may carry a suffix, e.g. "Ready (this model can't translate)".
             if (status.startsWith("Ready") && LiveSubtitleService.isSupported()) {
                 startSubsButton.setEnabled(true);

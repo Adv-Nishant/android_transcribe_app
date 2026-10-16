@@ -52,7 +52,7 @@
     <string name="model_desc_sensevoice">Anglais, chinois, cantonais, japonais, coréen ; rapide</string>
     <string name="model_desc_whisper_small">99 langues, compact ; traduit vers l\'anglais</string>
     <string name="model_desc_nemotron">40 langues dont chinois, japonais, coréen, arabe, hindi ; avec ponctuation</string>
-    <string name="model_desc_parakeet_v3_q8">Comme le modèle intégré, précision supérieure</string>
+    <string name="model_desc_parakeet_v3_q8">Parakeet TDT 0.6B v3 en précision supérieure</string>
     <string name="model_desc_whisper_turbo">99 langues, le plus précis de cette liste ; ne traduit pas</string>
     <string name="model_desc_browse">Parcourir tous les modèles transcribe.cpp</string>
     <string name="models_desc">Le modèle intégré fonctionne immédiatement. Vous pouvez aussi importer n\'importe quel modèle GGUF transcribe.cpp téléchargé. L\'application reste entièrement hors ligne ; les téléchargements passent par votre navigateur.</string>
@@ -70,7 +70,7 @@
     <string name="models_delete">Supprimer le modèle</string>
     <string name="models_delete_confirm">Supprimer %1$s du stockage de l\'application ?</string>
     <string name="models_language_section">Langue</string>
-    <string name="models_language_desc">La langue transmise au modèle. « Automatique » laisse le modèle décider. Whisper et les autres modèles auxquels on peut indiquer la langue la respectent ; le modèle Parakeet intégré détecte toujours la langue lui-même et ignore ce réglage. Les langues non prises en charge par le modèle actif sont ignorées.</string>
+    <string name="models_language_desc">La langue transmise au modèle. « Automatique » laisse le modèle décider. Whisper et les autres modèles auxquels on peut indiquer la langue la respectent ; les modèles Parakeet détectent toujours la langue eux-mêmes et ignorent ce réglage. Les langues non prises en charge par le modèle actif sont ignorées.</string>
     <string name="models_language_auto">Automatique</string>
     <string name="models_language_saved">Langue enregistrée</string>
     <string name="models_translate">Traduire en anglais</string>
@@ -79,6 +79,18 @@
     <string name="models_threads_section">Threads CPU</string>
     <string name="models_threads_desc">Threads utilisés pour la transcription. « Automatique » choisit une valeur adaptée au processeur de cet appareil. Si la transcription est lente, essayez d\'autres valeurs ; plus de threads n\'est pas toujours plus rapide.</string>
     <string name="models_threads_auto">Automatique</string>
+    <!-- No model available (F-Droid builds start without one) -->
+    <string name="no_model_title">Aucun modèle vocal installé</string>
+    <string name="no_model_main">La saisie vocale, les sous-titres en direct et la transcription de fichiers nécessitent un modèle vocal. Touchez « Ajouter un modèle vocal » pour en télécharger un dans votre navigateur et l\'importer.</string>
+    <string name="no_model_steps">1. Touchez « Télécharger le modèle recommandé ». Votre navigateur télécharge Parakeet TDT 0.6B v3 (485 Mo, 25 langues européennes).\n2. Une fois le téléchargement terminé, touchez « Importer un fichier de modèle » ci-dessous et choisissez le fichier .gguf téléchargé (généralement dans Téléchargements).\n\nL\'application elle-même reste hors ligne ; seul votre navigateur télécharge le fichier. Vous pouvez le supprimer des Téléchargements après l\'import.</string>
+    <string name="btn_download_recommended">Télécharger le modèle recommandé (485 Mo)</string>
+    <string name="btn_add_model">Ajouter un modèle vocal</string>
+    <string name="models_desc_no_builtin">Importez n\'importe quel modèle GGUF transcribe.cpp téléchargé. L\'application reste entièrement hors ligne ; les téléchargements passent par votre navigateur.</string>
+    <string name="model_desc_recommended">Recommandé · 25 langues européennes, rapide et précis</string>
+    <string name="voice_status_need_model">Un modèle vocal est nécessaire pour la saisie vocale.</string>
+    <string name="no_model_short">Aucun modèle vocal installé. Ouvrez Offline Voice Input pour en ajouter un.</string>
+    <string name="voice_no_model">Aucun modèle vocal installé pour l\'instant. Touchez ici pour en ajouter un.</string>
+    <string name="ime_no_model_hint">Ouvrez l\'application pour en ajouter un</string>
 
     <string name="section_benchmark">Test de performance</string>
     <string name="desc_benchmark">Mesure la vitesse de transcription du modèle actif sur cet appareil à l\'aide d\'un enregistrement de test en anglais intégré (11 s).</string>

@@ -31,6 +31,51 @@ pub fn files_dir(env: &mut JNIEnv, context: &JObject) -> anyhow::Result<PathBuf>
     Ok(PathBuf::from(path_string))
 }
 
+/// True if this build bundles a model (F-Droid builds don't). Judged on the
+/// APK assets rather than an earlier extraction, so it matches the app's
+/// `ModelStore.hasBuiltinModel`.
+pub fn has_builtin_model(env: &mut JNIEnv, context: &JObject) -> bool {
+    match list_builtin_assets(env, context) {
+        Ok(names) => names
+            .iter()
+            .any(|n| n.to_ascii_lowercase().ends_with(".gguf")),
+        Err(e) => {
+            let _ = env.exception_clear();
+            log::warn!("cannot list bundled model assets: {}", e);
+            false
+        }
+    }
+}
+
+fn list_builtin_assets(env: &mut JNIEnv, context: &JObject) -> anyhow::Result<Vec<String>> {
+    use jni::objects::JObjectArray;
+
+    let asset_manager = env
+        .call_method(
+            context,
+            "getAssets",
+            "()Landroid/content/res/AssetManager;",
+            &[],
+        )?
+        .l()?;
+    let dir = env.new_string(BUILTIN_MODEL_DIR)?;
+    let list: JObjectArray = env
+        .call_method(
+            &asset_manager,
+            "list",
+            "(Ljava/lang/String;)[Ljava/lang/String;",
+            &[(&dir).into()],
+        )?
+        .l()?
+        .into();
+    let mut names = Vec::new();
+    for i in 0..env.get_array_length(&list)? {
+        let name = env.get_object_array_element(&list, i)?;
+        names.push(env.get_string(&name.into())?.into());
+    }
+    Ok(names)
+}
+
 /// Extracts the bundled model from APK assets (if not already done) and
 /// returns the path of its GGUF file.
 ///

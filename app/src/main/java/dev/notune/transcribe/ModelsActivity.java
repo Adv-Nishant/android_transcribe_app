@@ -36,16 +36,16 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Lets the user pick the speech model: the built-in Parakeet model, or any
- * transcribe.cpp GGUF model imported from a locally downloaded file. Import
- * goes through the system file picker (SAF), so the app itself needs no
- * internet or storage permission — download links are only *shown* here and
- * open in the browser.
+ * Lets the user pick the speech model: the built-in Parakeet model (not in
+ * F-Droid builds), or any transcribe.cpp GGUF model imported from a locally
+ * downloaded file. Import goes through the system file picker (SAF), so the
+ * app itself needs no internet or storage permission — download links are
+ * only *shown* here and open in the browser. Without any model, the screen
+ * leads through downloading the recommended one and importing it.
  *
  * The selection is stored as marker files in filesDir (same pattern as the
  * other settings), read by the Rust engine loader:
- *   - {@code active_model}: file name of the GGUF under {@code files/models/},
- *     absent/empty = built-in model.
+ *   - {@code active_model}: see {@link ModelStore}.
  *   - {@code model_language}: optional language hint for GGUF models.
  */
 public class ModelsActivity extends AppCompatActivity {
@@ -125,6 +125,11 @@ public class ModelsActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_model_links).setOnClickListener(v -> showLinksDialog());
+        findViewById(R.id.btn_download_recommended).setOnClickListener(v ->
+                openInBrowser(ModelStore.RECOMMENDED_URL));
+        if (!ModelStore.hasBuiltinModel(this)) {
+            ((TextView) findViewById(R.id.txt_models_desc)).setText(R.string.models_desc_no_builtin);
+        }
 
         setupLanguageSpinner();
         setupThreadsSpinner();
@@ -134,7 +139,7 @@ public class ModelsActivity extends AppCompatActivity {
         translateSwitch.setChecked(!readConfig("model_translate").isEmpty());
         translateSwitch.setOnCheckedChangeListener((btn, checked) -> {
             writeConfig("model_translate", checked ? "1" : "");
-            statusText.setText(getString(R.string.models_loading));
+            setStatus(getString(R.string.models_loading));
             reloadModelNative(this);
         });
 
@@ -185,7 +190,7 @@ public class ModelsActivity extends AppCompatActivity {
                 if (tag.equals(readConfig("model_language"))) return;
                 writeConfig("model_language", tag);
                 snackbar(getString(R.string.models_language_saved));
-                statusText.setText(getString(R.string.models_loading));
+                setStatus(getString(R.string.models_loading));
                 reloadModelNative(ModelsActivity.this);
             }
 
@@ -229,7 +234,7 @@ public class ModelsActivity extends AppCompatActivity {
                 String value = values.get(position);
                 if (value.equals(readConfig("model_threads"))) return;
                 writeConfig("model_threads", value);
-                statusText.setText(getString(R.string.models_loading));
+                setStatus(getString(R.string.models_loading));
                 reloadModelNative(ModelsActivity.this);
             }
 
@@ -240,12 +245,6 @@ public class ModelsActivity extends AppCompatActivity {
     }
 
     // --- Model list -------------------------------------------------------
-
-    private File modelsDir() {
-        File dir = new File(getFilesDir(), "models");
-        dir.mkdirs();
-        return dir;
-    }
 
     private String readConfig(String name) {
         File f = new File(getFilesDir(), name);
@@ -272,27 +271,20 @@ public class ModelsActivity extends AppCompatActivity {
 
     private void refreshList() {
         modelList.removeAllViews();
-        String active = readConfig("active_model");
+        String active = ModelStore.ensureValidSelection(this);
+        List<String> names = ModelStore.importedModels(this);
+        boolean builtin = ModelStore.hasBuiltinModel(this);
 
-        List<String> names = new ArrayList<>();
-        File[] files = modelsDir().listFiles(
-                (dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".gguf"));
-        if (files != null) {
-            for (File f : files) names.add(f.getName());
+        findViewById(R.id.no_model_area).setVisibility(
+                builtin || !names.isEmpty() ? View.GONE : View.VISIBLE);
+
+        if (builtin) {
+            addModelRow(getString(R.string.models_builtin),
+                    getString(R.string.models_builtin_sub), null, active.isEmpty());
         }
-        names.sort(String.CASE_INSENSITIVE_ORDER);
-
-        // If the active model's file has disappeared, fall back to built-in.
-        if (!active.isEmpty() && !names.contains(active)) {
-            writeConfig("active_model", "");
-            active = "";
-        }
-
-        addModelRow(getString(R.string.models_builtin),
-                getString(R.string.models_builtin_sub), null, active.isEmpty());
         for (String name : names) {
             String size = Formatter.formatShortFileSize(
-                    this, new File(modelsDir(), name).length());
+                    this, new File(ModelStore.modelsDir(this), name).length());
             addModelRow(name, size, name, name.equals(active));
         }
     }
@@ -320,9 +312,9 @@ public class ModelsActivity extends AppCompatActivity {
     }
 
     private void selectModel(String fileNameOrNull) {
-        writeConfig("active_model", fileNameOrNull == null ? "" : fileNameOrNull);
+        ModelStore.setActiveModel(this, fileNameOrNull);
         refreshList();
-        statusText.setText(getString(R.string.models_loading));
+        setStatus(getString(R.string.models_loading));
         reloadModelNative(this);
     }
 
@@ -331,8 +323,8 @@ public class ModelsActivity extends AppCompatActivity {
                 .setTitle(R.string.models_delete)
                 .setMessage(getString(R.string.models_delete_confirm, fileName))
                 .setPositiveButton(android.R.string.ok, (d, w) -> {
-                    new File(modelsDir(), fileName).delete();
-                    if (fileName.equals(readConfig("active_model"))) {
+                    new File(ModelStore.modelsDir(this), fileName).delete();
+                    if (fileName.equals(ModelStore.activeModel(this))) {
                         selectModel(null);
                     } else {
                         refreshList();
@@ -345,13 +337,21 @@ public class ModelsActivity extends AppCompatActivity {
     // --- Download links ----------------------------------------------------
 
     private void showLinksDialog() {
+        // Without a bundled model, the model other builds bundle comes first.
+        List<ModelLink> links = new ArrayList<>();
+        if (!ModelStore.hasBuiltinModel(this)) {
+            links.add(new ModelLink(ModelStore.RECOMMENDED_NAME, R.string.model_desc_recommended,
+                    ModelStore.RECOMMENDED_SIZE, ModelStore.RECOMMENDED_URL));
+        }
+        links.addAll(Arrays.asList(MODEL_LINKS));
+
         ArrayAdapter<ModelLink> adapter = new ArrayAdapter<ModelLink>(
-                this, R.layout.item_model_link, MODEL_LINKS) {
+                this, R.layout.item_model_link, links) {
             @Override
             public View getView(int position, View convertView, android.view.ViewGroup parent) {
                 View row = convertView != null ? convertView
                         : getLayoutInflater().inflate(R.layout.item_model_link, parent, false);
-                ModelLink link = MODEL_LINKS[position];
+                ModelLink link = links.get(position);
                 ((TextView) row.findViewById(R.id.txt_link_name)).setText(link.name);
                 ((TextView) row.findViewById(R.id.txt_link_size)).setText(link.size);
                 ((TextView) row.findViewById(R.id.txt_link_desc)).setText(link.descRes);
@@ -360,16 +360,17 @@ public class ModelsActivity extends AppCompatActivity {
         };
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.models_links_title)
-                .setAdapter(adapter, (d, which) -> {
-                    Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(MODEL_LINKS[which].url));
-                    try {
-                        startActivity(view);
-                    } catch (android.content.ActivityNotFoundException e) {
-                        snackbar(getString(R.string.models_no_browser));
-                    }
-                })
+                .setAdapter(adapter, (d, which) -> openInBrowser(links.get(which).url))
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
+    }
+
+    private void openInBrowser(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (android.content.ActivityNotFoundException e) {
+            snackbar(getString(R.string.models_no_browser));
+        }
     }
 
     // --- Import ------------------------------------------------------------
@@ -384,7 +385,7 @@ public class ModelsActivity extends AppCompatActivity {
         String name = queryDisplayName(uri);
         long size = querySize(uri);
 
-        if (name == null || !name.toLowerCase(Locale.ROOT).endsWith(".gguf")) {
+        if (name == null || !ModelStore.isGguf(name)) {
             new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.models_import_bad_title)
                     .setMessage(R.string.models_import_bad_body)
@@ -408,8 +409,8 @@ public class ModelsActivity extends AppCompatActivity {
         importBar.setProgress(0);
         importText.setText(getString(R.string.models_importing, name));
 
-        File dest = new File(modelsDir(), name);
-        File tmp = new File(modelsDir(), name + ".part");
+        File dest = new File(ModelStore.modelsDir(this), name);
+        File tmp = new File(ModelStore.modelsDir(this), name + ".part");
 
         new Thread(() -> {
             boolean ok = false;
@@ -438,7 +439,13 @@ public class ModelsActivity extends AppCompatActivity {
                 importArea.setVisibility(View.GONE);
                 if (success) {
                     snackbar(getString(R.string.models_import_done, name));
+                    String before = ModelStore.activeModel(this);
                     refreshList();
+                    // Without a bundled model, the first import becomes active.
+                    if (!before.equals(ModelStore.activeModel(this))) {
+                        setStatus(getString(R.string.models_loading));
+                        reloadModelNative(this);
+                    }
                 } else {
                     snackbar(getString(R.string.models_import_failed));
                 }
@@ -474,9 +481,16 @@ public class ModelsActivity extends AppCompatActivity {
         Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show();
     }
 
+    /** Shows engine status below the list; empty hides it. */
+    private void setStatus(String status) {
+        statusText.setText(status);
+        statusText.setVisibility(status.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
     // Called from Rust with load progress ("Loading model...", "Ready", "Error: ...").
+    // Having no model at all is explained by the no-model hint instead.
     public void onStatusUpdate(String status) {
-        runOnUiThread(() -> statusText.setText(status));
+        runOnUiThread(() -> setStatus(ModelStore.NO_MODEL_STATUS.equals(status) ? "" : status));
     }
 
     private native void reloadModelNative(ModelsActivity activity);

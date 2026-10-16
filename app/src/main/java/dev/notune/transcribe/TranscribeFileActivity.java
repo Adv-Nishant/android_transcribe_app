@@ -72,6 +72,12 @@ public class TranscribeFileActivity extends AppCompatActivity {
             return;
         }
 
+        if (!ModelStore.hasAnyModel(this)) {
+            statusText.setText(R.string.no_model_short);
+            progressBar.setVisibility(View.GONE);
+            return;
+        }
+
         statusText.setText(R.string.models_loading);
         initNative(this);
     }
@@ -119,7 +125,7 @@ public class TranscribeFileActivity extends AppCompatActivity {
                     startDecodeAndTranscribe();
                 }
             } else if (status != null && status.startsWith("Error")) {
-                statusText.setText(status);
+                statusText.setText(ModelStore.displayStatus(this, status));
                 progressBar.setVisibility(View.GONE);
             } else if (!decodeStarted) {
                 statusText.setText(status);

@@ -52,7 +52,7 @@
     <string name="model_desc_sensevoice">Английский, китайский, кантонский, японский, корейский; быстрая</string>
     <string name="model_desc_whisper_small">99 языков, компактная; переводит на английский</string>
     <string name="model_desc_nemotron">40 языков, вкл. китайский, японский, корейский, арабский, хинди; с пунктуацией</string>
-    <string name="model_desc_parakeet_v3_q8">Как встроенная модель, но точнее</string>
+    <string name="model_desc_parakeet_v3_q8">Parakeet TDT 0.6B v3 с более высокой точностью</string>
     <string name="model_desc_whisper_turbo">99 языков, самая точная в этом списке; не переводит</string>
     <string name="model_desc_browse">Все модели transcribe.cpp</string>
     <string name="models_desc">Встроенная модель работает сразу. Вы также можете импортировать любую скачанную модель GGUF для transcribe.cpp. Приложение остаётся полностью офлайн; загрузки выполняются в браузере.</string>
@@ -70,7 +70,7 @@
     <string name="models_delete">Удалить модель</string>
     <string name="models_delete_confirm">Удалить %1$s из хранилища приложения?</string>
     <string name="models_language_section">Язык</string>
-    <string name="models_language_desc">Язык, передаваемый модели. «Автоматически» позволяет модели решать сама. Whisper и другие модели, которым можно задать язык, его учитывают; встроенная модель Parakeet всегда определяет язык сама и игнорирует эту настройку. Языки, не поддерживаемые активной моделью, игнорируются.</string>
+    <string name="models_language_desc">Язык, передаваемый модели. «Автоматически» позволяет модели решать сама. Whisper и другие модели, которым можно задать язык, его учитывают; модели Parakeet всегда определяют язык сами и игнорируют эту настройку. Языки, не поддерживаемые активной моделью, игнорируются.</string>
     <string name="models_language_auto">Автоматически</string>
     <string name="models_language_saved">Язык сохранён</string>
     <string name="models_translate">Переводить на английский</string>
@@ -79,6 +79,18 @@
     <string name="models_threads_section">Потоки ЦП</string>
     <string name="models_threads_desc">Потоки, используемые для распознавания. «Автоматически» подбирает значение под процессор этого устройства. Если распознавание медленное, попробуйте другие значения; больше потоков не всегда быстрее.</string>
     <string name="models_threads_auto">Автоматически</string>
+    <!-- No model available (F-Droid builds start without one) -->
+    <string name="no_model_title">Речевая модель не установлена</string>
+    <string name="no_model_main">Для голосового ввода, субтитров в реальном времени и расшифровки файлов нужна речевая модель. Нажмите «Добавить речевую модель», чтобы скачать её в браузере и импортировать.</string>
+    <string name="no_model_steps">1. Нажмите «Скачать рекомендуемую модель». Браузер скачает Parakeet TDT 0.6B v3 (485 МБ, 25 европейских языков).\n2. Когда загрузка завершится, нажмите «Импортировать файл модели» ниже и выберите скачанный файл .gguf (обычно в папке «Загрузки»).\n\nСамо приложение остаётся офлайн: файл скачивает только браузер. После импорта его можно удалить из загрузок.</string>
+    <string name="btn_download_recommended">Скачать рекомендуемую модель (485 МБ)</string>
+    <string name="btn_add_model">Добавить речевую модель</string>
+    <string name="models_desc_no_builtin">Импортируйте любую скачанную модель GGUF для transcribe.cpp. Приложение остаётся полностью офлайн; загрузки выполняются в браузере.</string>
+    <string name="model_desc_recommended">Рекомендуется · 25 европейских языков, быстрая и точная</string>
+    <string name="voice_status_need_model">Для голосового ввода нужна речевая модель.</string>
+    <string name="no_model_short">Речевая модель не установлена. Откройте Offline Voice Input, чтобы добавить её.</string>
+    <string name="voice_no_model">Речевая модель ещё не установлена. Нажмите здесь, чтобы добавить её.</string>
+    <string name="ime_no_model_hint">Откройте приложение, чтобы добавить её</string>
 
     <string name="section_benchmark">Тест скорости</string>
     <string name="desc_benchmark">Измеряет скорость распознавания активной модели на этом устройстве по встроенной тестовой записи на английском (11 с).</string>

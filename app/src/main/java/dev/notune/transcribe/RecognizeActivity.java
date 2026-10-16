@@ -82,6 +82,19 @@ public class RecognizeActivity extends AppCompatActivity {
             return;
         }
 
+        // Nothing to transcribe with yet: tapping the panel opens the screen
+        // that adds a model.
+        if (!ModelStore.hasAnyModel(this)) {
+            status.setText(R.string.voice_no_model);
+            findViewById(R.id.root).setOnClickListener(v -> {
+                startActivity(new Intent(this, ModelsActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                setResult(Activity.RESULT_CANCELED);
+                finish();
+            });
+            return;
+        }
+
         initNative(this);
         isRecording = true;
         status.setText(R.string.voice_listening);
@@ -145,7 +158,7 @@ public class RecognizeActivity extends AppCompatActivity {
             // Errors are shown as they are; everything else (model loading,
             // "Transcribing...") just means listening or busy for the user.
             if (s != null && s.startsWith("Error")) {
-                status.setText(s);
+                status.setText(ModelStore.displayStatus(this, s));
             } else {
                 status.setText(isRecording ? R.string.voice_listening : R.string.voice_processing);
             }

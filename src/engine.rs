@@ -604,6 +604,11 @@ fn read_config(path: &Path) -> Option<String> {
     }
 }
 
+/// Status reported when there is nothing to load: no imported model is
+/// selected and this build bundles none (F-Droid). The app matches this exact
+/// text (`ModelStore.NO_MODEL_STATUS`) to show its translated hint instead.
+const NO_MODEL_STATUS: &str = "Error: no speech model installed";
+
 /// Performs the model load: the selected imported GGUF if any (falling back
 /// to the bundled model on failure), otherwise the bundled model.
 fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
@@ -621,6 +626,7 @@ fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
     let language = config.language.clone();
     let translate = config.translate;
     let threads = config.threads.unwrap_or_else(performance_core_count);
+    let has_builtin = assets::has_builtin_model(env, context);
 
     if let Some(name) = config.active_model.clone() {
         let path = files_dir.join("models").join(&name);
@@ -635,6 +641,11 @@ fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
             }
             Err(e) => {
                 log::error!("Imported model {} failed to load: {}", path.display(), e);
+                if !has_builtin {
+                    let msg = format!("Error loading {}: {}", name, e);
+                    notify_status(env, context, &msg);
+                    return Err(msg);
+                }
                 notify_status(
                     env,
                     context,
@@ -643,6 +654,11 @@ fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
                 // fall through to the bundled model
             }
         }
+    }
+
+    if !has_builtin {
+        notify_status(env, context, NO_MODEL_STATUS);
+        return Err(NO_MODEL_STATUS.trim_start_matches("Error: ").to_string());
     }
 
     notify_status(env, context, "Checking assets...");
