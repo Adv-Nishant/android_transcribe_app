@@ -1,0 +1,1 @@
+First F-Droid release. This build comes without a speech model: on first start, the app shows how to download the recommended model (485 MB) in your browser and import it. Any other transcribe.cpp GGUF model works too.
