@@ -21,10 +21,12 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowAnimationStyle">@android:style/Animation.InputMethod</item>
-        <!-- Hide the caller's keyboard: IME windows draw above app windows,
-             so on Android 11 and older the panel would otherwise sit
-             invisibly behind a keyboard that was open when voice input
-             started (newer versions hide it anyway). -->
-        <item name="android:windowSoftInputMode">stateAlwaysHidden</item>
+        <!-- Unspecified, not stateAlwaysHidden: either way the caller's
+             keyboard is hidden while the panel (which has no text field) has
+             focus, so it can't cover the panel. But an always-hidden window
+             also sends a hide request when it loses focus; that lands just as
+             the caller's field reconnects and makes keyboards that insert the
+             result themselves (SwiftKey) lose it much more often. -->
+        <item name="android:windowSoftInputMode">stateUnspecified</item>
     </style>
 </resources>
