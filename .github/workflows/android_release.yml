@@ -74,13 +74,16 @@ jobs:
       run: |
         echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
 
-    - name: Build Release APK
+    # The standard flavor (bundled model) is what releases ship; the fdroid
+    # flavor is built too so a change that breaks the F-Droid build shows up
+    # here instead of on F-Droid's build server.
+    - name: Build Release APKs
       env:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASS: ${{ secrets.KEY_PASS }}
         STORE_PASS: ${{ secrets.STORE_PASS }}
       run: |
-        ./gradlew assembleRelease
+        ./gradlew assembleStandardRelease assembleFdroidRelease
 
     - name: Build Release AAB
       env:
@@ -88,7 +91,7 @@ jobs:
         KEY_PASS: ${{ secrets.KEY_PASS }}
         STORE_PASS: ${{ secrets.STORE_PASS }}
       run: |
-        ./gradlew bundleRelease
+        ./gradlew bundleStandardRelease
 
     - name: Extract Version Name
       id: extract_version
@@ -99,14 +102,21 @@ jobs:
 
     - name: Rename Artifacts
       run: |
-        cp app/build/outputs/apk/release/app-release.apk android_transcribe_app_v${{ env.VERSION_NAME }}.apk
-        cp app/build/outputs/bundle/release/app-release.aab android_transcribe_app_v${{ env.VERSION_NAME }}.aab
+        cp app/build/outputs/apk/standard/release/app-standard-release.apk android_transcribe_app_v${{ env.VERSION_NAME }}.apk
+        cp app/build/outputs/bundle/standardRelease/app-standard-release.aab android_transcribe_app_v${{ env.VERSION_NAME }}.aab
+        cp app/build/outputs/apk/fdroid/release/app-fdroid-release.apk android_transcribe_app_v${{ env.VERSION_NAME }}_fdroid.apk
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release-apk-v${{ env.VERSION_NAME }}
         path: android_transcribe_app_v${{ env.VERSION_NAME }}.apk
+
+    - name: Upload F-Droid flavor APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-fdroid-apk-v${{ env.VERSION_NAME }}
+        path: android_transcribe_app_v${{ env.VERSION_NAME }}_fdroid.apk
 
     - name: Upload AAB Artifact
       uses: actions/upload-artifact@v4
