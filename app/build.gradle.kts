@@ -25,6 +25,19 @@ android {
         }
     }
 
+    // "standard" (GitHub releases, Google Play) ships the Parakeet model;
+    // "fdroid" is the same app without it: F-Droid builds everything from
+    // source, so users import a model they downloaded in their browser.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("standard") {
+            dimension = "distribution"
+        }
+        create("fdroid") {
+            dimension = "distribution"
+        }
+    }
+
     signingConfigs {
         create("release") {
             val ksFile = rootProject.file("release.keystore")
@@ -64,7 +77,8 @@ android {
     }
 
     // Play Asset Delivery: large model files go into a separate asset pack
-    // so the base module stays under the 200 MB Play Store limit.
+    // so the base module stays under the 200 MB Play Store limit. Only the
+    // standard flavor is built as a bundle.
     assetPacks += listOf(":model_assets")
 }
 
@@ -76,11 +90,8 @@ val isBundle = gradle.startParameter.taskNames.any {
     it.contains("bundle", ignoreCase = true)
 }
 if (!isBundle) {
-    android.sourceSets.getByName("main") {
-        assets.srcDirs(
-            "src/main/assets",
-            rootProject.file("model_assets/src/main/assets")
-        )
+    android.sourceSets.getByName("standard") {
+        assets.srcDirs(rootProject.file("model_assets/src/main/assets"))
     }
 }
 
@@ -251,6 +262,7 @@ val downloadModels by tasks.registering {
     }
 }
 
-tasks.named("preBuild") {
+// Only the standard flavor bundles the model; fdroid builds never download it.
+tasks.matching { it.name.matches(Regex("preStandard\\w*Build")) }.configureEach {
     dependsOn(downloadModels)
 }
