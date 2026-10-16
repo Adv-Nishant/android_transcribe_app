@@ -1,1 +1,1 @@
-Private, offline speech-to-text keyboard powered by AI
+Private, offline speech-to-text for your keyboard, with live subtitles

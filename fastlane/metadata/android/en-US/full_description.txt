@@ -1,33 +1,30 @@
-Offline Voice Input delivers professional-grade speech-to-text that runs entirely on your device. Whether you're writing emails, taking notes, or chatting, your voice never leaves your phone — no internet connection, no account, no tracking.
+Offline Voice Input turns your speech into text entirely on your device. Whether you're writing messages, taking notes or searching, your voice never leaves your phone: the app has no internet permission, no account and no tracking.
 
 VOICE TYPING IN ANY APP
-Tap the microphone on a compatible keyboard — such as Microsoft SwiftKey — or a website's voice-search button, and Offline Voice Input transcribes your speech straight into the text field. It registers as your device's speech-to-text provider.
-Note: some keyboards (such as Gboard) only use Google's own voice typing and can't pass speech to other apps. If yours does, switch to a keyboard like SwiftKey — or simply use the built-in voice keyboard described below, which always works.
+Tap the microphone on a compatible keyboard (such as AnySoftKeyboard or Microsoft SwiftKey) or a website's voice-search button, and your speech is typed straight into the text field. The app registers as your device's speech-to-text provider, so it works with a wide range of keyboards and apps. Keyboards whose mic key switches to a voice keyboard (HeliBoard, FlorisBoard, OpenBoard, …) open the included voice keyboard instead.
 
 LIVE SUBTITLES
-Get real-time, on-device captions for any audio or video playing on your phone — videos, podcasts, meetings and more.
+Real-time, on-device captions for any audio or video playing on your phone: videos, podcasts, meetings and more.
 
 TRANSCRIBE AUDIO FILES
 Share an audio file to Offline Voice Input (or open it with the app) to turn the recording into text.
 
-OPTIONAL VOICE KEYBOARD
-Prefer voice input as its own keyboard? A dedicated voice keyboard is included — switch to it whenever you like.
+SPEECH MODELS
+F-Droid builds everything from source, so this version comes without a speech model. On first start, the app walks you through adding one in two steps: your browser downloads the recommended model (NVIDIA Parakeet TDT 0.6B v3, 485 MB, 25 European languages), then you import the file. You can also import any other transcribe.cpp GGUF model, for example Whisper for 99 languages or a small English-only Parakeet. The app itself never goes online.
 
-WHY YOU'LL LOVE IT
-• 100% offline — even works in airplane mode, nothing is ever uploaded
-• Private by design — audio is processed on-device and never stored or sent
-• Fast and accurate, powered by NVIDIA's Parakeet model
-• 25 languages, including English, German, French, Spanish, Italian, Portuguese, Dutch, Polish, Russian and Ukrainian
+FEATURES
+• 100% offline: works in airplane mode, nothing is ever uploaded
+• Private by design: audio is processed on-device and never stored or sent
+• Optional auto-stop after silence and pausing of playing media while you speak
+• Translation to English with Whisper models
+• Material You design with dark mode
 • Free and open source (MIT License)
 
-The app downloads the speech model (~670 MB) once on first launch; afterwards everything runs locally on your device.
+Languages of the recommended model: Bulgarian, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hungarian, Italian, Latvian, Lithuanian, Maltese, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Ukrainian.
 
-POWERED BY OPEN SOURCE
-We believe in transparency and the power of the community. Offline Voice Input is built with cutting-edge open-source technology:
-• NVIDIA Parakeet TDT 0.6B — high-performance on-device speech recognition (INT8 ONNX, quantized by istupakov)
-• transcribe-rs — the Rust transcription engine by CJ Pais
-• ONNX Runtime — efficient on-device model inference
-• A native Android interface with a Rust core for speed and safety
+Note: some keyboards (such as Gboard) only use their own voice typing and can't pass speech to other apps. With those, use the included voice keyboard.
+
+Speech recognition runs on transcribe.cpp (ggml), wrapped in a Rust core with a native Android interface.
 
 Source code, issues and contributions:
 https://github.com/notune/android_transcribe_app
