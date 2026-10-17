@@ -52,7 +52,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 drops the unused parts of Material/AppCompat. Native code
+            // calls back into Java by name; proguard-rules.pro keeps those.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
     }
