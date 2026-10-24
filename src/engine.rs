@@ -16,6 +16,7 @@ use jni::objects::{GlobalRef, JObject};
 use jni::JNIEnv;
 
 use crate::assets;
+use crate::backend::{self, BackendKind};
 
 /// File in filesDir naming the imported GGUF (a file under `models/`) to use
 /// instead of the bundled model. Absent or empty = bundled model.
@@ -631,6 +632,16 @@ fn do_load(env: &mut JNIEnv, context: &JObject) -> Result<(), String> {
     if let Some(name) = config.active_model.clone() {
         let path = files_dir.join("models").join(&name);
         notify_status(env, context, &format!("Loading model {}...", name));
+        if backend::for_model(&path) == BackendKind::IndicConformerHindi {
+            let msg = format!(
+                "IndicConformer Hindi requires the optional IndicConformer backend; \
+                 this build only supports transcribe.cpp for this model ({})",
+                name
+            );
+            log::error!("{}", msg);
+            notify_status(env, context, &format!("Error: {}", msg));
+            return Err(msg);
+        }
         match Engine::load(&path, language.clone(), translate, threads) {
             Ok(engine) => {
                 let status = engine.ready_status;
