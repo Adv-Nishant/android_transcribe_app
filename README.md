@@ -81,6 +81,33 @@ This relies on the undocumented `PROJECT_MEDIA` app-op; on some OEM builds it ma
 
 The built-in Parakeet model works out of the box. (The F-Droid build has no built-in model, since F-Droid builds everything from source: on first start, the app shows how to download the same model in your browser and import it. The F-Droid build is reproducible and carries the same signature as the GitHub releases, which also include it as `…_fdroid.apk`, so you can switch between the GitHub/Obtainium and F-Droid versions without reinstalling.) Under **Manage speech models** you can additionally import any [transcribe.cpp](https://github.com/handy-computer/transcribe.cpp) GGUF model: download a `.gguf` file in your browser (the in-app *Where to get models* dialog lists direct links, e.g. a tiny 135 MB English-only Parakeet, the multilingual Nemotron 3.5 streaming model with punctuation, or Whisper large-v3-turbo), then import it via the system file picker and select it. The app itself needs no internet permission — model files are simply copied into the app's private storage. An optional language hint (e.g. `en-US`, or `auto`) can be set for imported models.
 
+### IndicConformer Hindi compatibility
+
+GGUF is a container format, not an inference architecture. The existing
+transcribe.cpp backend remains the only backend enabled in this build, and
+continues to handle the bundled Parakeet TDT model and all existing imported
+models. The exact `indicconformer-hindi.q8_0.gguf` filename is deliberately
+recognized as a separate backend family; it is not passed to transcribe.cpp
+and it does not silently fall back to the bundled model.
+
+The compatible upstream implementation is
+[Indicconformer.cpp](https://github.com/vivek-shunyalabs/Indicconformer.cpp).
+Before enabling its optional Android backend, verify the exact file with that
+implementation's CLI:
+
+```text
+parakeet-cli info indicconformer-hindi.q8_0.gguf
+parakeet-cli transcribe --model indicconformer-hindi.q8_0.gguf \
+  --input hindi-16khz-mono.wav --decoder ctc --lang hi
+```
+
+The file must contain the IndicConformer metadata (`indic.*`,
+`parakeet.tokenizer.pieces`, and the expected CTC tensor names). The upstream
+repositories inspected for this integration do not publish this exact binary,
+and the model host was not reachable during verification, so this repository
+does not claim that the artifact is loadable or that Hindi transcription works
+on-device. Importing it currently reports the missing-backend error explicitly.
+
 ## Prerequisites
 
 | Dependency | Installation |
